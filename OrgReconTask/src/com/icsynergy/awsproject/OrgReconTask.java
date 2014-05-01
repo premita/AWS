@@ -29,7 +29,10 @@ public class OrgReconTask extends TaskSupport {
     private final static Logger m_logger = Logger.getLogger("com.icsynergy");
     
     //private static final String SQL = "select MANAGEMENT_GROUP, MANAGEMENT_GROUP_PIN from WSP_VENUE_MANAGEMENT_GROUP group by MANAGEMENT_GROUP, MANAGEMENT_GROUP_PIN";
-    private static final String SQL = "select MANAGEMENT_GROUP, MANAGEMENT_GROUP_PIN, MANGEMENT_GROUP_ID from WSP_VENUE_MANAGEMENT_GROUP group by MANAGEMENT_GROUP, MANAGEMENT_GROUP_PIN, MANGEMENT_GROUP_ID";
+    private static final String MG = "MANAGEMENT_GROUP";
+    private static final String MGPIN = "MANAGEMENT_GROUP_PIN";
+    private static final String MGID = "MANGEMENT_GROUP_ID";
+    private static final String strSQLTemplate = "SELECT %s, %s, %s FROM %s WHERE %s NOT IN (%s) GROUP BY %s, %s, %s";
     
     //TODO add parameter with IT ResName to get DB connection details        
     private static final String SYSVARCODE = "AWS.DBITResName";
@@ -45,6 +48,21 @@ public class OrgReconTask extends TaskSupport {
         String strITResName = SysConfigHelper.getPropValue(SYSVARCODE);
         if( strITResName == null)
             throw new Exception( "Can't get a value for a system property: " + SYSVARCODE);
+        
+        // pull table name from a param
+        String strTableName = hashMap.get("Table Name").toString();
+        
+        // check filter param
+        String strFilterList = hashMap.containsKey("ID List To Filter Out") ? hashMap.get("ID List To Filter Out").toString() : null;
+        
+        if( strFilterList != null && strFilterList.length() > 0 )
+          strFilterList = strFilterList.replace('|', ',');
+        else
+          strFilterList = "0";
+        
+        // create final SQL statement
+        String SQL = String.format(strSQLTemplate, MG, MGPIN, MGID, strTableName, MGID, strFilterList, MG, MGPIN, MGID);
+        m_logger.finest("SQL statement: " + SQL);
 
         ITResHelper itresHelper = new ITResHelper( strITResName );  
         Map<String, String> map = itresHelper.getAllParams();
@@ -61,15 +79,9 @@ public class OrgReconTask extends TaskSupport {
         if( map.containsKey(ITResHelper.Constants.GTCDBDriverParamName) )
             helper = new JDBCHelper(map.get(ITResHelper.Constants.GTCDBDriverParamName), map);
         
-        assert helper != null;
-        m_logger.finest("Helper class created");
-        
         Connection conn = helper.getConnection();
-        if( conn == null ){
-            m_logger.severe("Can't get a connection to DB");
-            return;
-        }
-        m_logger.finest("Connection created");
+        if( conn == null )
+            throw new Exception("Can't get a connection to DB");
         
         Statement stmt = conn.createStatement();
         ResultSet rs = stmt.executeQuery(SQL);
@@ -85,7 +97,7 @@ public class OrgReconTask extends TaskSupport {
         while( rs.next() ){
             
             // look for orgs with the specified Management Group ID
-            SearchCriteria crit = new SearchCriteria(UDFGRPID, rs.getInt("MANAGEMENT_GROUP_ID"), SearchCriteria.Operator.EQUAL);
+            SearchCriteria crit = new SearchCriteria(UDFGRPID, rs.getInt("MANGEMENT_GROUP_ID"), SearchCriteria.Operator.EQUAL);
             
             // return attributes set
             Set<String> setAttrs = new HashSet<String>();
@@ -104,7 +116,7 @@ public class OrgReconTask extends TaskSupport {
                 org.setAttribute(OrganizationManagerConstants.AttributeName.ORG_NAME.getId(), rs.getString("MANAGEMENT_GROUP"));
                 org.setAttribute(OrganizationManagerConstants.AttributeName.ORG_TYPE.getId(), "Company");
                 org.setAttribute(UDFPIN, rs.getString("MANAGEMENT_GROUP_PIN"));
-                org.setAttribute(UDFGRPID, rs.getInt("MANAGEMENT_GROUP_ID"));
+                org.setAttribute(UDFGRPID, rs.getInt("MANGEMENT_GROUP_ID"));
                 
                 String strStatus = orgMgr.create(org);
                 m_logger.fine("Organization created: " + rs.getString("MANAGEMENT_GROUP") + ". Status: " + strStatus);
@@ -134,14 +146,14 @@ public class OrgReconTask extends TaskSupport {
                     
                     strStatus = orgMgr.modify(org);
                     m_logger.fine("Organization in OIM has been changed to " + rs.getString("MANAGEMENT_GROUP") + " PIN: " + rs.getString("MANAGEMENT_GROUP_PIN") +
-                                  " for the Org with ID: " + rs.getString("MANAGEMENT_GROUP_ID") + ". Status of the operation: " + strStatus );
+                                  " for the Org with ID: " + rs.getString("MANGEMENT_GROUP_ID") + ". Status of the operation: " + strStatus );
                 } else            
                     m_logger.finest("Organization " + rs.getString("MANAGEMENT_GROUP") + " exists in OIM and has all the same attributes. Skipping");
                 break;
             
             // there is more that one
             default:
-                m_logger.severe("More than one organization found for the ID: " + rs.getString("MANAGEMENT_GROUP_ID"));
+                m_logger.severe("More than one organization found for the ID: " + rs.getString("MANGEMENT_GROUP_ID"));
             }
         }
         stmt.close();

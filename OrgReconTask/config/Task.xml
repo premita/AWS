@@ -4,6 +4,10 @@
         <class>com.icsynergy.awsproject.OrgReconTask</class>
         <description>Reconciles Organization</description>
         <retry>0</retry>
+        <parameters>
+            <string-param required="true" helpText="Name of a view to pull a data from">Table Name</string-param>
+            <string-param required="false" helpText="Group IDs to filter out with | as a separator">ID List To Filter Out</string-param>
+        </parameters>
     </task>
     <task>
         <name>Org-Venue Lookup Reconciliation</name>
@@ -15,3 +19,4 @@
         </parameters>
     </task>
 </scheduledTasks>
+

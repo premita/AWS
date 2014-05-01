@@ -65,6 +65,7 @@
          <list n="constituent-sets">
             <hash>
                <list n="pattern-filters">
+                  <string v="+"/>
                   <string v="+Task.xml"/>
                </list>
                <list n="url-path">
