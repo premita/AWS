@@ -28,8 +28,8 @@ public class OrgReconTask extends TaskSupport {
     private static final String TAG = "OrgReconTask";
     private final static Logger m_logger = Logger.getLogger("com.icsynergy");
     
-    private static final String SQL = "select MANAGEMENT_GROUP, MANAGEMENT_GROUP_PIN from WSP_VENUE_MANAGEMENT_GROUP group by MANAGEMENT_GROUP, MANAGEMENT_GROUP_PIN";
-    //private static final String SQL = "select MANAGEMENT_GROUP, MANAGEMENT_GROUP_PIN, MANGEMENT_GROUP_ID from WSP_VENUE_MANAGEMENT_GROUP group by MANAGEMENT_GROUP, MANAGEMENT_GROUP_PIN, MANGEMENT_GROUP_ID";
+    //private static final String SQL = "select MANAGEMENT_GROUP, MANAGEMENT_GROUP_PIN from WSP_VENUE_MANAGEMENT_GROUP group by MANAGEMENT_GROUP, MANAGEMENT_GROUP_PIN";
+    private static final String SQL = "select MANAGEMENT_GROUP, MANAGEMENT_GROUP_PIN, MANGEMENT_GROUP_ID from WSP_VENUE_MANAGEMENT_GROUP group by MANAGEMENT_GROUP, MANAGEMENT_GROUP_PIN, MANGEMENT_GROUP_ID";
     
     //TODO add parameter with IT ResName to get DB connection details        
     private static final String SYSVARCODE = "AWS.DBITResName";
