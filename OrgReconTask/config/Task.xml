@@ -1,0 +1,17 @@
+<scheduledTasks xmlns="http://xmlns.oracle.com/oim/scheduler">
+    <task>
+        <name>Organization Reconciliation</name>
+        <class>com.icsynergy.awsproject.OrgReconTask</class>
+        <description>Reconciles Organization</description>
+        <retry>0</retry>
+    </task>
+    <task>
+        <name>Org-Venue Lookup Reconciliation</name>
+        <class>com.icsynergy.awsproject.OrgVenueLookupReconTask</class>
+        <description>Reconciles Organization-Venue relationship into a lookup</description>
+        <retry>0</retry>
+        <parameters>
+            <string-param required="true" helpText="Name of a lookup to populate values into">Lookup Name</string-param>
+        </parameters>
+    </task>
+</scheduledTasks>
