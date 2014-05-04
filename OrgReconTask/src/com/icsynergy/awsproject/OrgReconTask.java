@@ -17,6 +17,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import oracle.iam.identity.exception.RoleAlreadyExistsException;
+import oracle.iam.identity.exception.RoleCreateException;
+import oracle.iam.identity.exception.ValidationFailedException;
 import oracle.iam.identity.orgmgmt.api.OrganizationManager;
 import oracle.iam.identity.orgmgmt.api.OrganizationManagerConstants;
 import oracle.iam.identity.orgmgmt.vo.Organization;
@@ -45,6 +48,7 @@ public class OrgReconTask extends TaskSupport {
   //TODO add parameter with IT ResName to get DB connection details
   private static final String SYSVARCODE = "AWS.DBITResName";
 
+  private static final String ROLENAMEPREFIX = "aws_delegated_admin_";
   private static final String UDFPIN = "pin";
   private static final String UDFGRPID = "grp_id";
 
@@ -140,6 +144,7 @@ public class OrgReconTask extends TaskSupport {
       setAttrs.add(OrganizationManagerConstants.AttributeName.ID_FIELD.getId());
       setAttrs.add(UDFPIN);
       setAttrs.add(UDFGRPID);
+      setAttrs.add(OrganizationManagerConstants.AttributeName.ORG_STATUS.getId());
 
       // get a list of orgs with criteria set above
       List<Organization> listOrgs = orgMgr.search(crit, setAttrs, null);
@@ -164,7 +169,7 @@ public class OrgReconTask extends TaskSupport {
         // map of a role attributes
         HashMap<String, Object> mapRoleAtt = new HashMap<String, Object>();
         mapRoleAtt.put(RoleManagerConstants.RoleAttributeName.NAME.getId(),
-                       "aws_delegated_admin_" + rs.getString(MGID));
+                       ROLENAMEPREFIX + rs.getString(MGID));
 
         // new role
         Role role = new Role(mapRoleAtt);
@@ -186,7 +191,7 @@ public class OrgReconTask extends TaskSupport {
         lstEntities.add(entPub);
         
         List<EntityPublication> lstPublications = srv.listEntityPublications(PolicyConstants.Resources.ROLE, rmResult.getEntityId(), null);
-        srv.removeEntityPublications(lstPublications);
+
         if( lstPublications.size() == 1 )
           lstUnpublish.add(lstPublications.get(0));
         break;
@@ -195,7 +200,11 @@ public class OrgReconTask extends TaskSupport {
       case 1:
         boolean bChangeName = false;
         boolean bChangePIN = false;
-
+        
+        //if organization is not Active -> skip it
+        if( !listOrgs.get(0).getAttribute(OrganizationManagerConstants.AttributeName.ORG_STATUS.getId()).toString().equalsIgnoreCase("Active") )
+          break;
+        
         // if name is different from the query -> set the flag
         if (!listOrgs.get(0).getAttribute(OrganizationManagerConstants.AttributeName.ORG_NAME.getId()).toString().equalsIgnoreCase(rs.getString(MG)))
           bChangeName = true;
@@ -221,10 +230,57 @@ public class OrgReconTask extends TaskSupport {
                         " for the Org with ID: " +
                         rs.getString(MGID) +
                         ". Status of the operation: " + strStatus);
+          
         } else
           m_logger.finest("Organization " + rs.getString(MG) +
-                          " exists in OIM and has all the same attributes. Skipping");
-        break;
+                          " exists in OIM and has all the same attributes. Checking for a role");
+        
+      // search for a role
+      setAttr = new HashSet<String>();
+      setAttr.add(RoleManagerConstants.RoleAttributeName.KEY.getId());
+      crit = new SearchCriteria(RoleManagerConstants.RoleAttributeName.NAME.getId(), ROLENAMEPREFIX+rs.getString(MGID), SearchCriteria.Operator.EQUAL);
+      
+      List<Role> lstRole = roleMgr.search(crit, setAttr, null);
+      
+      boolean bPublish = false;
+      String strRoleKey = null;
+      
+      // if role not found -> create it
+      if( lstRole.size() == 0 ){
+        m_logger.finest( "Role hasn't been found: " + ROLENAMEPREFIX + rs.getString(MGID) );
+        RoleManagerResult res = createRole( ROLENAMEPREFIX + rs.getString(MGID) );
+        
+        // if role successfully created -> publish it to org
+        bPublish = res.getStatus().equalsIgnoreCase("COMPLETED");
+        strRoleKey = res.getEntityId();
+        
+        
+        m_logger.finer("Role was created: " + ROLENAMEPREFIX + rs.getString(MGID));
+      } else if( lstRole.size() == 1) {
+        m_logger.finest("Role exists");
+        bPublish = !isRolePublishedToOrg( lstRole.get(0).getEntityId(), listOrgs.get(0).getEntityId() );
+        strRoleKey = lstRole.get(0).getEntityId();
+      } else
+        throw new Exception( "More than one role found with a name: " + ROLENAMEPREFIX + rs.getString(MGID));
+      
+      // publish if required
+      if( bPublish ) {
+        m_logger.finest("Role is required to be published to the org");
+        entPub = new EntityPublication();
+        entPub.setEntityId( strRoleKey );
+        entPub.setEntityType( PolicyConstants.Resources.ROLE.getId() );
+        entPub.setHierarchicalScope( true );
+        entPub.setScopeId( listOrgs.get(0).getEntityId() );
+        
+        lstEntities.add( entPub );
+        m_logger.finest("Role added for publication");
+        
+        // get EntPub for the role publication to Top
+        List<EntityPublication> lstEntPubToTop = srv.listEntityPublicationInScope(PolicyConstants.Resources.ROLE, strRoleKey, strTopOrgId, false, null);
+        if( lstEntPubToTop.size() == 1 )
+          lstUnpublish.add( lstEntPubToTop.get(0) );
+      }
+      break;
 
         // there is more that one
       default:
@@ -236,7 +292,7 @@ public class OrgReconTask extends TaskSupport {
     conn.close();
 
     // do publish
-    if( srv.addEntityPublications(lstEntities).size() == lstEntities.size() )
+    if( lstEntities.size() > 0 && srv.addEntityPublications(lstEntities).size() == lstEntities.size() )
       m_logger.fine( "Roles published successfully" );
     
     m_logger.finest("List to unpublish: " + lstUnpublish.toString());
@@ -251,5 +307,35 @@ public class OrgReconTask extends TaskSupport {
   }
 
   public void setAttributes() {
+  }
+  
+  private RoleManagerResult createRole( String strName ) throws Exception {
+    m_logger.entering(TAG, "createRole");
+    RoleManager mgr = Platform.getService(RoleManager.class);
+    
+    HashMap<String,Object> map = new HashMap<String,Object>();
+    
+    map.put(RoleManagerConstants.RoleAttributeName.NAME.getId(), strName);
+    Role role = new Role(map);
+    
+    RoleManagerResult res = mgr.create(role);
+    
+    m_logger.exiting(TAG, "createRole");
+    return res;
+  }
+  
+  private boolean isRolePublishedToOrg( String strRoleKey, String strOrgKey ) {
+    m_logger.entering( TAG, "isRolePublishedToOrg", strRoleKey + " " + strOrgKey );
+    EntityPublicationService srvEntPub = Platform.getService(EntityPublicationService.class);
+    
+    boolean bRes = false;
+    List<EntityPublication> lstPubs = srvEntPub.listEntityPublicationsInScope(PolicyConstants.Resources.ROLE, strOrgKey, null);
+    for( EntityPublication ent : lstPubs )
+      if( ent.getEntityId().equals(strRoleKey) ) {
+        bRes = true;
+        break;
+      }
+    m_logger.exiting( TAG, "isRolePublishedToOrg", bRes );
+    return bRes;
   }
 }
