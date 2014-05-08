@@ -27,10 +27,12 @@ import oracle.iam.identity.rolemgmt.api.RoleManager;
 import oracle.iam.identity.rolemgmt.api.RoleManagerConstants;
 import oracle.iam.identity.rolemgmt.vo.Role;
 import oracle.iam.identity.rolemgmt.vo.RoleManagerResult;
+import oracle.iam.identity.usermgmt.api.UserManagerConstants;
 import oracle.iam.platform.Platform;
 import oracle.iam.platform.authopss.api.PolicyConstants;
 import oracle.iam.platform.authopss.vo.EntityPublication;
 import oracle.iam.platform.entitymgr.vo.SearchCriteria;
+import oracle.iam.platform.entitymgr.vo.SearchRule;
 import oracle.iam.platformservice.api.EntityPublicationService;
 import oracle.iam.scheduler.vo.TaskSupport;
 
@@ -166,37 +168,43 @@ public class OrgReconTask extends TaskSupport {
         m_logger.fine("Organization created: " + rs.getString(MG) +
                       ". Status: " + strStatus);
 
-        // map of a role attributes
-        HashMap<String, Object> mapRoleAtt = new HashMap<String, Object>();
-        mapRoleAtt.put(RoleManagerConstants.RoleAttributeName.NAME.getId(),
-                       ROLENAMEPREFIX + rs.getString(MGID));
-
-        // new role
-        Role role = new Role(mapRoleAtt);
-
+        // TODO check for a role in OIM
         // create
-        RoleManagerResult rmResult = roleMgr.create(role);
+        RoleManagerResult rmResult = createRole( ROLENAMEPREFIX + rs.getString(MGID) );
         m_logger.finest("Role created, result: " + rmResult.getStatus());
 
         // entity to publish
-        EntityPublication entPub = new EntityPublication();
-        // role id
-        entPub.setEntityId(rmResult.getEntityId());
-        entPub.setEntityType(PolicyConstants.Resources.ROLE.getId());
-        // org key
-        entPub.setScopeId(strStatus);
-        entPub.setHierarchicalScope(true);
-
-        // add entity to publish
+        EntityPublication entPub = getEPubForRoleToOrg( rmResult.getEntityId(), strStatus );
         lstEntities.add(entPub);
         
+        // get a list of publications of the role, for a newly created role it's only Top Org
         List<EntityPublication> lstPublications = srv.listEntityPublications(PolicyConstants.Resources.ROLE, rmResult.getEntityId(), null);
 
         if( lstPublications.size() == 1 )
           lstUnpublish.add(lstPublications.get(0));
-        break;
+      
+      /* --------------- Role with a name of an org -----------------------------*/
+        //TODO add check for the existing role
+        // create role
+        rmResult = createRole( rs.getString(MG) );
+        m_logger.fine("Role " + rs.getString(MG) + " created with id:" + rmResult.getEntityId());
+      
+        // entity to publish
+        entPub = getEPubForRoleToOrg( rmResult.getEntityId(), strStatus );
+        // add to the list for publishing
+        lstEntities.add( entPub );
+      
+        // get a list of publications of the role, for a newly created role it's only Top Org
+        lstPublications = srv.listEntityPublications(PolicyConstants.Resources.ROLE, rmResult.getEntityId(), null);
 
-        // there is only one
+        if( lstPublications.size() == 1 )
+          lstUnpublish.add(lstPublications.get(0));
+        
+        break;
+      
+      
+      ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      // there is only one org
       case 1:
         boolean bChangeName = false;
         boolean bChangePIN = false;
@@ -254,7 +262,6 @@ public class OrgReconTask extends TaskSupport {
         bPublish = res.getStatus().equalsIgnoreCase("COMPLETED");
         strRoleKey = res.getEntityId();
         
-        
         m_logger.finer("Role was created: " + ROLENAMEPREFIX + rs.getString(MGID));
       } else if( lstRole.size() == 1) {
         m_logger.finest("Role exists");
@@ -266,20 +273,63 @@ public class OrgReconTask extends TaskSupport {
       // publish if required
       if( bPublish ) {
         m_logger.finest("Role is required to be published to the org");
-        entPub = new EntityPublication();
-        entPub.setEntityId( strRoleKey );
-        entPub.setEntityType( PolicyConstants.Resources.ROLE.getId() );
-        entPub.setHierarchicalScope( true );
-        entPub.setScopeId( listOrgs.get(0).getEntityId() );
-        
+        entPub = getEPubForRoleToOrg( strRoleKey, listOrgs.get(0).getEntityId() );        
         lstEntities.add( entPub );
         m_logger.finest("Role added for publication");
-        
-        // get EntPub for the role publication to Top
-        List<EntityPublication> lstEntPubToTop = srv.listEntityPublicationInScope(PolicyConstants.Resources.ROLE, strRoleKey, strTopOrgId, false, null);
-        if( lstEntPubToTop.size() == 1 )
-          lstUnpublish.add( lstEntPubToTop.get(0) );
       }
+      // get EntPub for the role publication to Top
+      List<EntityPublication> lstEntPubToTop = srv.listEntityPublicationInScope(PolicyConstants.Resources.ROLE, strRoleKey, strTopOrgId, false, null);
+      if( lstEntPubToTop.size() == 1 )
+        lstUnpublish.add( lstEntPubToTop.get(0) );
+  
+      /* ----------------------- for a Role with the name of Org ------------------------------- */
+      // search for a role with MG name
+      setAttr = new HashSet<String>();
+      setAttr.add(RoleManagerConstants.RoleAttributeName.KEY.getId());
+      crit = new SearchCriteria(RoleManagerConstants.RoleAttributeName.NAME.getId(), rs.getString(MG), SearchCriteria.Operator.EQUAL);
+      
+      lstRole = roleMgr.search(crit, setAttr, null);
+      
+      bPublish = false;
+      strRoleKey = null;
+      
+      // if role not found -> create it
+      if( lstRole.size() == 0 ){
+        m_logger.finest( "Role hasn't been found: " + rs.getString(MG) );
+        RoleManagerResult res = createRole( rs.getString(MG) );
+        m_logger.finer("Role was created: " + rs.getString(MG));
+        
+        // if role successfully created -> publish it to org
+        bPublish = res.getStatus().equalsIgnoreCase("COMPLETED");
+        strRoleKey = res.getEntityId();
+        
+        // set membership rule
+        SearchRule rule = new SearchRule( UserManagerConstants.AttributeName.USER_ORGANIZATION.getId(), 
+                                          listOrgs.get(0).getAttribute(OrganizationManagerConstants.AttributeName.ORG_NAME.getId()), 
+                                          SearchRule.Operator.EQUAL);
+        res = roleMgr.setUserMembershipRule(strRoleKey, rule);
+        
+        if( res.getStatus().equalsIgnoreCase("COMPLETED"))
+          m_logger.finest("Membership rule created");
+      } else if( lstRole.size() == 1) {
+        m_logger.finest("Role exists");
+        bPublish = !isRolePublishedToOrg( lstRole.get(0).getEntityId(), listOrgs.get(0).getEntityId() );
+        strRoleKey = lstRole.get(0).getEntityId();
+      } else
+        throw new Exception( "More than one role found with a name: " + rs.getString(MG));
+      
+      // publish if required
+      if( bPublish ) {
+        m_logger.finest("Role is required to be published to the org");
+        entPub = getEPubForRoleToOrg( strRoleKey, listOrgs.get(0).getEntityId() );        
+        lstEntities.add( entPub );
+        m_logger.finest("Role added for publication");        
+      }
+      // get EntPub for the role publication to Top
+      lstEntPubToTop = srv.listEntityPublicationInScope(PolicyConstants.Resources.ROLE, strRoleKey, strTopOrgId, false, null);
+      if( lstEntPubToTop.size() == 1 )
+        lstUnpublish.add( lstEntPubToTop.get(0) );
+
       break;
 
         // there is more that one
@@ -337,5 +387,16 @@ public class OrgReconTask extends TaskSupport {
       }
     m_logger.exiting( TAG, "isRolePublishedToOrg", bRes );
     return bRes;
+  }
+  
+  private EntityPublication getEPubForRoleToOrg( String strRoleKey, String strOrgKey ) {
+    EntityPublication res = new EntityPublication();
+    
+    res.setEntityId( strRoleKey );
+    res.setScopeId( strOrgKey );
+    res.setHierarchicalScope( true );
+    res.setEntityType( PolicyConstants.Resources.ROLE.getId() );
+    
+    return res;
   }
 }
