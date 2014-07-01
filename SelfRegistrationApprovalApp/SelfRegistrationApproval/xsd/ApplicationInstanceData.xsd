@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/AppInstanceData"
+     xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/AppInstanceData"
+     xmlns:general="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/GeneralData"
+           xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+     xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc" jaxb:version="1.0" jaxb:extensionBindingPrefixes="xjc">
+    <xs:annotation>
+        <xs:appinfo>
+            <jaxb:schemaBindings>
+                <jaxb:package name="oracle.iam.requestdataws.webservicestubs.types"/>
+            </jaxb:schemaBindings>
+        </xs:appinfo>
+    </xs:annotation>
+     
+    <xs:import namespace="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/GeneralData" schemaLocation="GeneralRequestData.xsd" />
+    
+    <xs:element name="AppInstanceKey" type="xs:string"/>
+ 	<xs:element name="AppInstanceData" type="AppInstanceDataType"/>
+ 	 
+    <xs:complexType name="AppInstanceDataType">
+        <xs:sequence>
+	            <xs:element name="ApplicationInstanceKey" type="xs:long" nillable="true"/>
+	            <xs:element name="ApplicationInstanceName" type="xs:string" nillable="true"/>
+	            <xs:element name="DisplayName" type="xs:string" nillable="true"/>
+				<xs:element name="Description" type="xs:string" nillable="true"/>
+				<xs:element name="ObjectKey" type="xs:long" nillable="true"/>
+	            <xs:element name="ObjectName" type="xs:string" nillable="true"/>
+				<xs:element name="DataSetName" type="xs:string" nillable="true"/>
+				<xs:element name="ItResourceKey" type="xs:long" nillable="true"/>
+				<xs:element name="ItResourceName" type="xs:string" nillable="true"/>
+				<xs:element name="ParentKey" type="xs:long" nillable="true"/>	
+				<xs:element name="SoftDelete" type="xs:boolean" nillable="true"/>
+				<xs:element name="IsApplicableToEntitlement" type="xs:boolean" nillable="true"/>
+				<xs:element name="AccountForm" type="AccountFormType" nillable="true" />
+				<xs:element name="ChildForms" type="AccountFormType" maxOccurs="unbounded" nillable="true"/>
+				<xs:element name="Type" nillable="true">
+				  <xs:simpleType>
+				    <xs:restriction base="xs:string">
+				      <xs:enumeration value="DOBBased"/>
+				      <xs:enumeration value="Disconnected"/>
+				      <xs:enumeration value="SPMLBased"/>
+				      <xs:enumeration value="ICFBased"/>
+				    </xs:restriction>
+			  	</xs:simpleType>
+			</xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    
+    <xs:complexType name="AccountFormType">
+		<xs:sequence>
+	        <xs:element name="Name" type="xs:string" nillable="true"/>
+	        <xs:element name="FormKey" type="xs:long" nillable="true"/>
+	        <xs:element name="Description" type="xs:string" nillable="true"/>
+	        <xs:element name="LatestVersion" type="xs:string" nillable="true"/>
+	        <xs:element name="ActiveVersion" type="xs:string" nillable="true"/>
+			<xs:element name="IsChild" type="xs:boolean" nillable="true"/>
+			<xs:element name="FormFields" maxOccurs="unbounded" nillable="true">
+			 	<xs:complexType>
+						<xs:sequence>
+						        <xs:element name="Name" type="xs:string" nillable="true"/>
+					        <xs:element name="FldKey" type="xs:long" nillable="true"/>
+					        <xs:element name="Label" type="xs:string" nillable="true"/>
+					        <xs:element name="Type" type="xs:string" nillable="true"/>
+					        <xs:element name="DefaultValue" type="xs:string" nillable="true"/>
+					        <xs:element name="IsEncrypted" type="xs:boolean" nillable="true"/>
+					        <xs:element name="Properties" type="general:MapValueType" nillable="true"/>
+						</xs:sequence>
+					</xs:complexType>	
+			</xs:element>	        
+    	</xs:sequence>
+    </xs:complexType>
+    
+</xs:schema>
+

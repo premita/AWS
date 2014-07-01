@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/FaultData"
+     xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/FaultData"
+     xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+     xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc" jaxb:version="1.0" jaxb:extensionBindingPrefixes="xjc">
+    <xs:annotation>
+        <xs:appinfo>
+            <jaxb:schemaBindings>
+                <jaxb:package name="oracle.iam.requestdataws.webservicestubs.types"/>
+            </jaxb:schemaBindings>
+        </xs:appinfo>
+    </xs:annotation>
+     
+    <xs:element name="FaultElement" type="Fault"/>
+    <xs:complexType name="Fault">
+        <xs:sequence>
+            <xs:element name="code" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+</xs:schema>
+

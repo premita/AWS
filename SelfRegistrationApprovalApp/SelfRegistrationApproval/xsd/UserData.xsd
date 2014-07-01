@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/UserData"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+ xmlns="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/UserData"
+     xmlns:general="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/GeneralData" 
+           xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+     xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc" jaxb:version="1.0" jaxb:extensionBindingPrefixes="xjc">
+    <xs:annotation>
+        <xs:appinfo>
+            <jaxb:schemaBindings>
+                <jaxb:package name="oracle.iam.requestdataws.webservicestubs.types"/>
+            </jaxb:schemaBindings>
+        </xs:appinfo>
+    </xs:annotation>
+     
+
+
+    <xs:import namespace="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/GeneralData" schemaLocation="GeneralRequestData.xsd" />
+ 	
+ 	 <xs:element name="UserId" type="xs:string"/>
+ 	 <xs:element name="UserData" type="UserDataType"/>
+ 	 
+     <xs:complexType name="UserDataType">
+		 <xs:sequence>
+		 	<xs:element name="usr_key" type="general:MultiValueType" nillable="true"/>
+            <xs:element name="act_key" type="general:MultiValueType" nillable="true"/>
+            <xs:element name="LastName" type="general:MultiValueType" nillable="true"/>
+            <xs:element name="FirstName" type="general:MultiValueType" nillable="true"/>
+            <xs:element name="MiddleName" type="general:MultiValueType" nillable="true"/>
+            <!-- <xs:element name="FullName" type="general:MultiValueType"/> -->
+            <xs:element name="DisplayName" type="general:MapValueType" nillable="true"/>
+            <xs:element name="XellerateType" type="general:MultiValueType" nillable="true"/>
+            <xs:element name="Status" type="general:MultiValueType" nillable="true"/>
+            <xs:element name="Role" type="general:MultiValueType" nillable="true"/>
+            <xs:element name="UserLogin" type="general:MultiValueType" nillable="true"/>
+            <xs:element name="FullName" type="general:MapValueType" nillable="true"/>
+            <xs:element name="UserManagerKey" type="general:MultiValueType"/>
+            <!-- 
+            <xs:element name="UserDisabled" type="general:MultiValueType"/>
+            
+            <xs:element name="StartDate" type="general:MultiValueType"/>
+            <xs:element name="EndDate" type="general:MultiValueType"/>
+            <xs:element name="UserProvisioningDate" type="general:MultiValueType"/>
+            <xs:element name="UserDeprovisioningDate" type="general:MultiValueType"/>
+            <xs:element name="UserProvisionedDate" type="general:MultiValueType"/>
+            <xs:element name="UserDeProvisionedDate" type="general:MultiValueType"/>
+            <xs:element name="Email" type="general:MultiValueType"/>
+            <xs:element name="UserLocked" type="general:MultiValueType"/>
+            <xs:element name="LockedOn" type="general:MultiValueType"/>
+            <xs:element name="AutomaticallyDeleteOn" type="general:MultiValueType"/>
+            <xs:element name="ManuallyLocked" type="general:MultiValueType"/>
+            <xs:element name="UserLoginAttemptsCtr" type="general:MultiValueType"/>
+            <xs:element name="UserUpdate" type="general:MultiValueType"/>
+            <xs:element name="UserCreate" type="general:MultiValueType"/>
+            <xs:element name="UserTimezone" type="general:MultiValueType"/>
+            <xs:element name="UserLocale" type="general:MultiValueType"/>
+            <xs:element name="usr_data_level" type="general:MultiValueType"/>
+            <xs:element name="usr_pwd_min_age_date" type="general:MultiValueType"/>
+            <xs:element name="usr_createby" type="general:MultiValueType"/>
+            <xs:element name="usr_updateby" type="general:MultiValueType"/>
+            <xs:element name="usr_created" type="general:MultiValueType"/>
+            <xs:element name="usr_policy_update" type="general:MultiValueType"/>
+            <xs:element name="Country" type="general:MultiValueType"/>
+            <xs:element name="DepartmentNumber" type="general:MultiValueType"/>
+            <xs:element name="Description" type="general:MultiValueType"/>
+            <xs:element name="CommonName" type="general:MultiValueType"/>
+            <xs:element name="EmployeeNumber" type="general:MultiValueType"/>
+            <xs:element name="Fax" type="general:MultiValueType"/>
+            <xs:element name="GenerationQualifier" type="general:MultiValueType"/>
+            <xs:element name="HireDate" type="general:MultiValueType"/>
+            <xs:element name="HomePhone" type="general:MultiValueType"/>
+            <xs:element name="LocalityName" type="general:MultiValueType"/>
+            <xs:element name="Mobile" type="general:MultiValueType"/>
+            <xs:element name="Pager" type="general:MultiValueType"/>
+            <xs:element name="HomePostalAddress" type="general:MultiValueType"/>
+            <xs:element name="PostalAddress" type="general:MultiValueType"/>
+            <xs:element name="PostalCode" type="general:MultiValueType"/>
+            <xs:element name="POBox" type="general:MultiValueType"/>
+            <xs:element name="State" type="general:MultiValueType"/>
+            <xs:element name="Street" type="general:MultiValueType"/>
+            <xs:element name="TelephoneNumber" type="general:MultiValueType"/>
+            <xs:element name="Title" type="general:MultiValueType"/>
+            <xs:element name="LDAPOrganization" type="general:MultiValueType"/>
+            <xs:element name="LDAPOrganizationUnit" type="general:MultiValueType"/>
+            <xs:element name="LDAPGUID" type="general:MultiValueType"/>
+            <xs:element name="LDAPDN" type="general:MultiValueType"/>
+            <xs:element name="FALanguage" type="general:MultiValueType"/>
+            <xs:element name="Currency" type="general:MultiValueType"/>
+            <xs:element name="FATerritory" type="general:MultiValueType"/>
+            <xs:element name="UserNamePreferredLanguage" type="general:MultiValueType"/>
+             -->
+              <!--  Arbitrary Attribute Name and values -->      
+
+<!-- 			<xs:element name="ArbitraryAttributeList" >
+				<xs:complexType>
+					<xs:sequence> 
+						<xs:element name="ArbitraryAttribute" type="general:ArbitraryAttributeType" maxOccurs="unbounded" />		
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>                     -->
+			<xs:element name="CustomAttribute" type="general:CustomAttributeType" maxOccurs="unbounded" nillable="true" />
+           
+           
+            
+            
+            <!--  Not included attributes -->
+            <!--
+				<xs:element name="EmbeddedHelp" type="general:MultiValueType"/>
+            	<xs:element name="NumberFormat" type="general:MultiValueType"/>
+            	<xs:element name="DateFormat" type="general:MultiValueType"/>
+            	<xs:element name="TimeFormat" type="general:MultiValueType"/>
+				             
+	            <xs:element name="Initials" type="general:MultiValueType"/>
+            	<xs:element name="PasswordGenerated" type="general:MultiValueType"/>
+	            <xs:element name="UserPwdCantChange" type="general:MultiValueType"/>
+	            <xs:element name="UserPwdNeverExpires" type="general:MultiValueType"/>
+	            <xs:element name="UserPwdExpireDate" type="general:MultiValueType"/>
+	            <xs:element name="usr_pwd_warn_date" type="general:MultiValueType"/>
+	            <xs:element name="usr_pwd_expired" type="general:MultiValueType"/>
+	            <xs:element name="usr_pwd_warned" type="general:MultiValueType"/>
+	            <xs:element name="usr_pwd_reset_attempts_ctr" type="general:MultiValueType"/>
+	            <xs:element name="usr_change_pwd_at_next_logon" type="general:MultiValueType"/>
+	            <xs:element name="FontSize" type="general:MultiValueType"/>
+            	<xs:element name="ColorContrast" type="general:MultiValueType"/>
+            	<xs:element name="AccessibilityMode" type="general:MultiValueType"/>
+	            
+             -->
+             
+         </xs:sequence>
+    </xs:complexType>
+
+</xs:schema>
+

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema attributeFormDefault="unqualified" elementFormDefault="qualified"
+        targetNamespace="http://xmlns.oracle.com/ApprovalApp/SelfRegistrationApproval/ApprovalProcess"
+        xmlns="http://www.w3.org/2001/XMLSchema"
+        xmlns:rds="http://xmlns.oracle.com/request/RequestDetails">
+ <import namespace="http://xmlns.oracle.com/request/RequestDetails"
+         schemaLocation="RequestDetails.xsd"/>
+ <element name="process">
+  <complexType>
+   <sequence>
+    <element ref="rds:RequestID"/>
+    <element ref="rds:RequestModel"/>
+    <element ref="rds:RequestTarget"/>
+    <element ref="rds:RequesterDetails"/>
+    <element ref="rds:BeneficiaryDetails"/>
+    <element ref="rds:ObjectDetails"/>
+    <element ref="rds:url"/>
+    <element ref="rds:OtherDetails"/>
+   </sequence>
+  </complexType>
+ </element>
+ <element name="processResponse">
+  <complexType>
+   <sequence>
+    <element name="result" type="string"/>
+   </sequence>
+  </complexType>
+ </element>
+</schema>

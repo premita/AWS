@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/RequestData"
+     xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/RequestData"
+           xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+     xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc" jaxb:version="1.0" jaxb:extensionBindingPrefixes="xjc">
+    <xs:annotation>
+        <xs:appinfo>
+            <jaxb:schemaBindings>
+                <jaxb:package name="oracle.iam.requestdataws.webservicestubs.types"/>
+            </jaxb:schemaBindings>
+        </xs:appinfo>
+    </xs:annotation>
+     
+    <xs:element name="RequestId" type="xs:string"/>
+    <xs:element name="RequestData" type="RequestDataType"/>
+    <xs:complexType name="RequestDataType">
+        <xs:sequence>
+            <xs:element name="RequestId" type="xs:string" nillable="true"/>
+            <xs:element name="RequestType" type="xs:string" nillable="true"/>
+            <xs:element name="RequesterId" type="xs:string" nillable="true"/>
+
+            <xs:element name="RequestStatus" type="xs:string" nillable="true"/>
+            <xs:element name="Justification" type="xs:string" nillable="true"/>
+            <xs:element name="EffectiveDate" type="xs:dateTime" nillable="true"/>
+            <xs:element name="CreationDate" type="xs:dateTime" nillable="true"/>
+            <xs:element name="EndDate" type="xs:dateTime" nillable="true"/>
+            <xs:element name="BeneficiaryExists" type="xs:boolean" nillable="true"/>
+            <xs:element name="BeneficiaryData" type="BeneficiaryDataType" nillable="true" />
+            <xs:element name="TargetEntityData" type="TargetEntityDataType" nillable="true"/>
+            <xs:element name="AdditionalData" type="AdditionalDataType" nillable="true"/>
+            <xs:element name="BulkRequest" type="xs:boolean" nillable="true"/>
+        </xs:sequence>
+
+    </xs:complexType>
+    <xs:complexType name="BeneficiaryDataType">
+        <xs:sequence>
+            <xs:element name="Beneficiary" type="BeneficiaryType" maxOccurs="unbounded" nillable="true"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="BeneficiaryType">
+        <xs:sequence maxOccurs="unbounded">
+            <xs:element name="Entity" type="EntityType" nillable="true" />
+
+        </xs:sequence>
+        <xs:attribute name="Id" type="xs:string"/>
+        <xs:attribute name="Type" type="xs:string"/>
+    </xs:complexType>
+    <xs:complexType name="AdditionalDataType">
+        <xs:sequence maxOccurs="unbounded">
+            <xs:element name="DataAttribute" type="DataAttributeType" nillable="true"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="EntityType">
+        <xs:sequence maxOccurs="unbounded">
+            <xs:element name="DataAttribute" type="DataAttributeType" nillable="true"/>
+        </xs:sequence>
+        <xs:attribute name="Id" type="xs:string"/>
+
+        <xs:attribute name="Type" type="xs:string"/>
+        <xs:attribute name="Name" type="xs:string"/>
+    </xs:complexType>
+    <xs:complexType name="DataAttributeType">
+        <xs:sequence maxOccurs="unbounded">
+            <xs:element name="ChildRow" type="RowType" nillable="true"/>
+        </xs:sequence>
+        <xs:attribute name="Name" type="xs:string"/>
+        <xs:attribute name="Type" type="xs:string"/>
+
+        <xs:attribute name="Value" type="xs:string"/>
+    </xs:complexType>
+    <xs:complexType name="RowType">
+        <xs:sequence maxOccurs="unbounded">
+
+            <xs:element name="ChildDataAttribute" type="ChildDataAttributeType" nillable="true"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="ChildDataAttributeType">
+        <xs:attribute name="Name" type="xs:string"/>
+        <xs:attribute name="Type" type="xs:string"/>
+        <xs:attribute name="Value" type="xs:string"/>
+        <xs:attribute name="Action" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="TargetEntityDataType">
+        <xs:sequence maxOccurs="unbounded">
+            <xs:element name="TargetEntity" type="EntityType" nillable="true"/>
+        </xs:sequence>
+    </xs:complexType>
+</xs:schema>
+

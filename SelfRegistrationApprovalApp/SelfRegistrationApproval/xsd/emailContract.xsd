@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="US-ASCII" ?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://att.com"
+            targetNamespace="http://att.com" elementFormDefault="qualified">
+  <xsd:element name="EmailContract">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="RequestID" type="xsd:integer"/>
+        <xsd:element name="Recipient">
+          <xsd:complexType>
+            <xsd:sequence>
+              <xsd:element name="FirstName" type="xsd:string"/>
+              <xsd:element name="LastName" type="xsd:string"/>
+              <xsd:element name="EmailAddress" type="xsd:string"/>
+              <xsd:element name="UserLogin" type="xsd:string"/>
+              <xsd:element name="Password" type="xsd:string"/>
+            </xsd:sequence>
+          </xsd:complexType>
+        </xsd:element>
+        <xsd:element name="Organization">
+          <xsd:complexType>
+            <xsd:sequence>
+              <xsd:element name="Name" type="xsd:string"/>
+              <xsd:element name="Admins">
+                <xsd:complexType>
+                  <xsd:sequence>
+                    <xsd:element name="Name" type="xsd:string"/>
+                    <xsd:element name="Email" type="xsd:string"/>
+                  </xsd:sequence>
+                </xsd:complexType>
+              </xsd:element>
+            </xsd:sequence>
+          </xsd:complexType>
+        </xsd:element>
+        <xsd:element name="BaseWebsiteUrl" type="xsd:string"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+</xsd:schema>

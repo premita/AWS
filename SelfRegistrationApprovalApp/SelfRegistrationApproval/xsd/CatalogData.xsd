@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/CatalogData"
+     xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/CatalogData"
+     xmlns:general="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/GeneralData" 
+           xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+     xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc" jaxb:version="1.0" jaxb:extensionBindingPrefixes="xjc">
+    <xs:annotation>
+        <xs:appinfo>
+            <jaxb:schemaBindings>
+                <jaxb:package name="oracle.iam.requestdataws.webservicestubs.types"/>
+            </jaxb:schemaBindings>
+        </xs:appinfo>
+    </xs:annotation>
+    
+     <xs:import namespace="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/GeneralData" schemaLocation="GeneralRequestData.xsd" />
+
+     <xs:element name="EntityKey" type="xs:string"/>
+     <xs:element name="EntityType" type="xs:string"/>
+     <xs:element name="CatalogData" type="CatalogDataType"/>
+
+     <xs:complexType name="CatalogDataType">
+         <xs:sequence>
+            <xs:element name="EntityKey" type="xs:string" nillable="true" />
+            <xs:element name="EntityType" type="xs:string" nillable="true"/>
+            <xs:element name="ParentEntityType" type="xs:string" nillable="true"/>
+            <xs:element name="ParentEntityKey" type="xs:string" nillable="true"/>
+            <xs:element name="EntityDisplayName" type="xs:string" nillable="true"/>
+            <xs:element name="EntityName" type="xs:string" nillable="true"/>
+            <xs:element name="EntityDescription" type="xs:string" nillable="true"/>
+            <xs:element name="IsRequestable" type="xs:long" nillable="true"/>
+            <xs:element name="IsDeleted" type="xs:long" nillable="true"/>
+            <xs:element name="Category" type="xs:string" nillable="true"/>
+            <xs:element name="AuditObjective" type="xs:string" nillable="true"/>
+            <xs:element name="ApproverUser" type="xs:string" nillable="true"/>
+            <xs:element name="ApproverRole" type="xs:string" nillable="true"/>
+            <xs:element name="FulfillmentUser" type="xs:string" nillable="true" />
+            <xs:element name="FulfillmentRole" type="xs:string" nillable="true" />
+            <xs:element name="CertifierUser" type="xs:string" nillable="true"/>
+            <xs:element name="CertifierRole" type="xs:string" nillable="true"/>
+            <xs:element name="ItemRisk" type="xs:int" nillable="true"/>
+            <xs:element name="Certifiable" type="xs:long" nillable="true"/>
+            <xs:element name="CustomAttribute" type="general:CustomAttributeType" maxOccurs="unbounded" nillable="true" /> 
+        </xs:sequence>
+    </xs:complexType>
+</xs:schema>
+

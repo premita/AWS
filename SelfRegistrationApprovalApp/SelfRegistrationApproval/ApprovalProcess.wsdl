@@ -1,0 +1,48 @@
+<?xml version= '1.0' encoding= 'UTF-8' ?>
+<wsdl:definitions
+     name="ApprovalProcess"
+     targetNamespace="http://xmlns.oracle.com/ApprovalApp_jws/SelfRegistrationApproval/ApprovalProcess"
+     xmlns:ns2="http://www.w3.org/2005/08/addressing"
+     xmlns:ns1="http://xmlns.oracle.com/ApprovalApp/SelfRegistrationApproval/ApprovalProcess"
+     xmlns:plnk="http://schemas.xmlsoap.org/ws/2003/05/partner-link/"
+     xmlns:ns3="http://att.com"
+     xmlns:client="http://xmlns.oracle.com/ApprovalApp_jws/SelfRegistrationApproval/ApprovalProcess"
+     xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+    >
+    <plnk:partnerLinkType name="ApprovalProcess">
+        <plnk:role name="ApprovalProcessProvider">
+            <plnk:portType name="client:ApprovalProcess"/>
+        </plnk:role>
+        <plnk:role name="ApprovalProcessRequester">
+            <plnk:portType name="client:ApprovalProcessCallback"/>
+        </plnk:role>
+    </plnk:partnerLinkType>
+    <wsdl:types>
+        <schema xmlns="http://www.w3.org/2001/XMLSchema">
+            <import namespace="http://xmlns.oracle.com/ApprovalApp/SelfRegistrationApproval/ApprovalProcess"
+                 schemaLocation="xsd/ApprovalProcess.xsd"/>
+        </schema>
+        <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+            <xsd:import namespace="http://www.w3.org/2005/08/addressing" schemaLocation="xsd/wsaddr.xsd"/>
+        </xsd:schema>
+        <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+            <xsd:import namespace="http://att.com" schemaLocation="xsd/emailContract.xsd"/>
+        </xsd:schema>
+    </wsdl:types>
+    <wsdl:message name="ApprovalProcessRequestMessage">
+        <wsdl:part name="payload" element="ns1:process"/>
+    </wsdl:message>
+    <wsdl:message name="ApprovalProcessResponseMessage">
+        <wsdl:part name="payload" element="ns1:processResponse"/>
+    </wsdl:message>
+    <wsdl:portType name="ApprovalProcess">
+        <wsdl:operation name="process">
+            <wsdl:input message="client:ApprovalProcessRequestMessage"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:portType name="ApprovalProcessCallback">
+        <wsdl:operation name="processResponse">
+            <wsdl:input message="client:ApprovalProcessResponseMessage"/>
+        </wsdl:operation>
+    </wsdl:portType>
+</wsdl:definitions>

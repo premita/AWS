@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/EntitlementData"
+     xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/EntitlementData"
+     xmlns:general="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/GeneralData"
+           xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+     xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc" jaxb:version="1.0" jaxb:extensionBindingPrefixes="xjc">
+    <xs:annotation>
+        <xs:appinfo>
+            <jaxb:schemaBindings>
+                <jaxb:package name="oracle.iam.requestdataws.webservicestubs.types"/>
+            </jaxb:schemaBindings>
+        </xs:appinfo>
+    </xs:annotation>
+     
+    <xs:import namespace="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/GeneralData" schemaLocation="GeneralRequestData.xsd" />
+    
+    <xs:element name="EntitlementKey" type="xs:string"/>
+ 	<xs:element name="EntitlementData" type="EntitlementDataType"/>
+ 	 
+    <xs:complexType name="EntitlementDataType">
+        <xs:sequence>
+            <xs:element name="EntitlementKey" type="xs:long" nillable="true"/>
+            <xs:element name="DisplayName" type="xs:string" nillable="true"/>
+            <xs:element name="Description" type="xs:string" nillable="true"/>
+			<xs:element name="ObjectKey" type="xs:long" nillable="true"/>
+			<xs:element name="ItResourceKey" type="xs:long" nillable="true"/>
+			<xs:element name="FormKey" type="xs:long" nillable="true"/>
+			<xs:element name="LookupValueKey" type="xs:long" nillable="true"/>
+			<xs:element name="EntitlementCode" type="xs:string" nillable="true"/>
+			<xs:element name="EntitlementValue" type="xs:string" nillable="true"/>
+			<xs:element name="IsValid" type="xs:boolean" nillable="true"/>
+			<xs:element name="FormFieldKey" type="xs:long" nillable="true"/> 
+        </xs:sequence>
+    </xs:complexType>
+    
+</xs:schema>
+

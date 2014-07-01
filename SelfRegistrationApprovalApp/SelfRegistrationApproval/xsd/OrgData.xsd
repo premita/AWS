@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/OrgData"
+     xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/OrgData"
+     xmlns:general="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/GeneralData"
+           xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+     xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc" jaxb:version="1.0" jaxb:extensionBindingPrefixes="xjc">
+    <xs:annotation>
+        <xs:appinfo>
+            <jaxb:schemaBindings>
+                <jaxb:package name="oracle.iam.requestdataws.webservicestubs.types"/>
+            </jaxb:schemaBindings>
+        </xs:appinfo>
+    </xs:annotation>
+     
+    <xs:import namespace="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/GeneralData" schemaLocation="GeneralRequestData.xsd" />
+    
+    <xs:element name="OrgKey" type="xs:string"/>
+ 	<xs:element name="OrgData" type="OrgDataType"/>
+ 	 
+    <xs:complexType name="OrgDataType">
+        <xs:sequence>
+            <xs:element name="OrgKey" type="general:MultiValueType" nillable="true" />
+            <xs:element name="OrganizationCustomerType" type="general:MultiValueType" nillable="true"/>
+            <xs:element name="OrganizationStatus" type="general:MultiValueType" nillable="true"/>
+            <xs:element name="OrganizationName" type="general:MultiValueType" nillable="true"/>
+            <xs:element name="CustomAttribute" type="general:CustomAttributeType" maxOccurs="unbounded" nillable="true"/> 
+            
+            <!-- <xs:element name="act_cust_acct_no" type="general:MultiValueType"/>
+            <xs:element name="act_carrier_code_1" type="general:MultiValueType"/>
+            <xs:element name="act_carrier_code_2" type="general:MultiValueType"/>
+            <xs:element name="act_carrier_code_3" type="general:MultiValueType"/>
+            <xs:element name="act_bill_id" type="general:MultiValueType"/>
+            <xs:element name="act_sic" type="general:MultiValueType"/>
+            <xs:element name="act_bizres" type="general:MultiValueType"/>
+            <xs:element name="act_sales_city" type="general:MultiValueType"/>
+            <xs:element name="act_ownership" type="general:MultiValueType"/>
+            <xs:element name="act_resporg_code" type="general:MultiValueType"/>
+            <xs:element name="act_cust_code_1" type="general:MultiValueType"/>
+            <xs:element name="act_cust_code_2" type="general:MultiValueType"/>
+            <xs:element name="act_cust_code_3" type="general:MultiValueType"/>
+            <xs:element name="act_division" type="general:MultiValueType"/>
+            <xs:element name="act_biz_group" type="general:MultiValueType"/>
+            <xs:element name="act_loa_date" type="general:MultiValueType"/>
+            <xs:element name="act_fed_tax_id" type="general:MultiValueType"/>
+            <xs:element name="act_fin_cntract_id" type="general:MultiValueType"/>
+            <xs:element name="act_contract_id" type="general:MultiValueType"/>
+            <xs:element name="act_rangep" type="general:MultiValueType"/>
+            <xs:element name="act_cic_code" type="general:MultiValueType"/>
+            <xs:element name="act_pic_fee_waiver" type="general:MultiValueType"/>
+            <xs:element name="act_hierarchy" type="general:MultiValueType"/>
+            <xs:element name="act_sales_channel" type="general:MultiValueType"/>
+            <xs:element name="act_disabled" type="general:MultiValueType"/>
+            <xs:element name="parent_key" type="general:MultiValueType"/>
+            <xs:element name="act_update_ad" type="general:MultiValueType"/>
+            <xs:element name="act_ldap_path" type="general:MultiValueType"/>
+            <xs:element name="act_max_users" type="general:MultiValueType"/>
+            <xs:element name="act_upn" type="general:MultiValueType"/>
+            <xs:element name="act_billing_sys_key" type="general:MultiValueType"/>
+            <xs:element name="billing_sys_name" type="general:MultiValueType"/>                                                            
+            <xs:element name="act_disabled_by_parent" type="general:MultiValueType"/>
+            <xs:element name="act_data_level" type="general:MultiValueType"/>
+            <xs:element name="act_create" type="general:MultiValueType"/>
+            <xs:element name="act_createby" type="general:MultiValueType"/>
+            <xs:element name="act_update" type="general:MultiValueType"/>
+            <xs:element name="act_updateby" type="general:MultiValueType"/>            --> 
+            
+        </xs:sequence>
+    </xs:complexType>
+    
+</xs:schema>
+

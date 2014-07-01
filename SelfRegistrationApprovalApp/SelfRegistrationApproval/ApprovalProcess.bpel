@@ -1,0 +1,959 @@
+<?xml version = "1.0" encoding = "UTF-8" ?>
+<!--
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  Oracle JDeveloper BPEL Designer 
+  
+  Created: Thu Apr 08 19:27:41 IST 2010
+  Author:  nitpatel
+  Purpose: Asynchronous BPEL Process
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+-->
+<process name="ApprovalProcess"
+         targetNamespace="http://xmlns.oracle.com/ApprovalApp_jws/SelfRegistrationApproval/ApprovalProcess"
+         xmlns="http://schemas.xmlsoap.org/ws/2003/03/business-process/"
+         xmlns:client="http://xmlns.oracle.com/ApprovalApp_jws/SelfRegistrationApproval/ApprovalProcess"
+         xmlns:ora="http://schemas.oracle.com/xpath/extension"
+         xmlns:bpelx="http://schemas.oracle.com/bpel/extension"
+         xmlns:bpws="http://schemas.xmlsoap.org/ws/2003/03/business-process/"
+         xmlns:ns1="http://wls.ws.workflowservice.platform.iam.oracle/"
+         xmlns:ns2="http://xmlns.oracle.com/bpel/workflow/taskService"
+         xmlns:ns4="http://xmlns.oracle.com/request/RequestDetails"
+         xmlns:ns3="http://xmlns.oracle.com/ApprovalApp/SelfRegistrationApproval/ApprovalProcess"
+         xmlns:task="http://xmlns.oracle.com/bpel/workflow/task"
+         xmlns:wfcommon="http://xmlns.oracle.com/bpel/workflow/common"
+         xmlns:wf="http://schemas.oracle.com/bpel/extension/workflow"
+         xmlns:ns6="http://xmlns.oracle.com/bpel/workflow/routingSlip"
+         xmlns:ns5="http://xmlns.oracle.com/bpel/workflow/TaskEvidenceService"
+         xmlns:ns7="http://www.oracle.com/XSL/Transform/java/oracle.tip.pc.services.functions.Xpath20"
+         xmlns:ns10="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+         xmlns:ns9="http://www.oracle.com/XSL/Transform/java/oracle.tip.pc.services.functions.ExtFunc"
+         xmlns:ns12="http://www.oracle.com/XSL/Transform/java/oracle.tip.dvm.LookupValue"
+         xmlns:ns13="http://schemas.oracle.com/bpel/extension/xpath/function/xdk"
+         xmlns:ns11="http://www.oracle.com/XSL/Transform/java/oracle.tip.xref.xpath.XRefXPathFunctions"
+         xmlns:ns8="http://schemas.oracle.com/xpath/extension/ldap"
+         xmlns:ns14="http://www.w3.org/2005/08/addressing"
+         xmlns:ns15="http://xmlns.oracle.com/RequestServiceApp_jws/RequestDataService/RequestDataService"
+         xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+         xmlns:bpm="http://xmlns.oracle.com/bpmn20/extensions"
+         xmlns:hwf="http://xmlns.oracle.com/bpel/workflow/xpath"
+         xmlns:ids="http://xmlns.oracle.com/bpel/services/IdentityService/xpath"
+         xmlns:ns16="http://xmlns.oracle.com/ias/pcbpel/NotificationService"
+         xmlns:ns17="http://xmlns.oracle.com/pcbpel/adapter/file/SelfRegistrationApprovalApp/SelfRegistrationApproval/debugfile"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns:ns18="http://att.com">
+    <bpelx:exec import="oracle.security.jps.*"/>
+    <!-- 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        PARTNERLINKS                                                      
+        List of services participating in this BPEL process               
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    --> 
+    <partnerLinks>
+        <!-- 
+      The 'client' role represents the requester of this service. It is 
+      used for callback. The location and correlation information associated
+      with the client role are automatically set using WS-Addressing.
+    -->
+        <partnerLink name="RequestApprovalService" partnerLinkType="client:ApprovalProcess" myRole="ApprovalProcessProvider" partnerRole="ApprovalProcessRequester"/>
+        <partnerLink name="CallbackService" partnerRole="CallbackService_Role"
+                     partnerLinkType="ns1:CallbackService_PL"/>
+        <partnerLink myRole="TaskServiceCallbackListener"
+                     name="ApprovalTask.TaskService_1" partnerRole="TaskService"
+                     partnerLinkType="ns2:TaskService"/>
+        <partnerLink name="RequestWSPartnerLink"
+                     partnerLinkType="ns15:RequestDataService"
+                     partnerRole="RequestDataServiceProvider"/>
+        <partnerLink name="NotifyTracking"
+                     partnerLinkType="ns16:NotificationServiceLink"
+                     partnerRole="NotificationServiceProvider"/>
+        <partnerLink name="NotificationAdmins"
+                     partnerLinkType="ns16:NotificationServiceLink"
+                     partnerRole="NotificationServiceProvider"/>
+    </partnerLinks>
+
+    <!-- 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        VARIABLES                                                        
+        List of messages and XML documents used within this BPEL process 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    -->
+    <variables>
+        <!-- Reference to the message passed as input during initiation -->
+        <variable name="inputVariable" messageType="client:ApprovalProcessRequestMessage"/>
+
+        <!-- Reference to the message that will be sent back to the requester during callback -->
+        <variable name="outputVariable" messageType="client:ApprovalProcessResponseMessage"/>
+        <variable name="Invoke_1_callback_InputVariable_1"
+                  messageType="ns1:callback"/>
+        <variable name="Invoke_1_callback_OutputVariable_1"
+                  messageType="ns1:callbackResponse"/>
+        <variable name="partnerLink" element="ns14:EndpointReference"/>
+        <variable name="ApprovalTask_1_globalVariable"
+                  messageType="ns2:taskMessage"/>
+        <variable name="oimurl" type="xsd:string"/>
+        <variable name="orgadmin" type="xsd:string"/>
+        <variable name="orgactkey" type="xsd:string"/>
+        <variable name="orggrpid" type="xsd:string"/>
+        <variable name="Invoke1_Write_InputVariable"
+                  messageType="ns17:Write_msg"/>
+        <variable name="firstName" type="xsd:string"/>
+        <variable name="lastName" type="xsd:string"/>
+        <variable name="emailAddress" type="xsd:string"/>
+        <variable name="displayName" type="xsd:string"/>
+        <variable name="emailTrackingBody" type="xsd:string"/>
+        <variable name="EmailInfo" element="ns18:EmailContract"/>
+        <variable name="userLogin" type="xsd:string"/>
+        <variable name="userPassword" type="xsd:string"/>
+        <variable name="b64_rethinkpossible" type="xsd:string"/>
+        <variable name="orgName" type="xsd:string"/>
+        <variable name="BaseWebsiteUrl" type="xsd:string"/>
+        <variable name="listAdminNames" type="xsd:string"/>
+        <variable name="listAdminEmails" type="xsd:string"/>
+        <variable name="adminName" type="xsd:string"/>
+        <variable name="adminEmail" type="xsd:string"/>
+    </variables>
+    
+    <faultHandlers>
+        <catchAll>
+            <sequence>
+                <assign name="AssignPartnerLink">
+                    <copy>
+                        <from expression="ora:getFaultAsString()"/>
+                        <to variable="outputVariable" part="payload"
+                            query="/ns3:processResponse/ns3:result"/>
+                    </copy>
+                    <copy>
+                        <from expression="ora:getConversationId()"/>
+                        <to variable="Invoke_1_callback_InputVariable_1"
+                            part="parameters" query="/ns1:callback/arg0"/>
+                    </copy>
+                    <copy>
+                        <from expression="ora:getFaultAsString()"/>
+                        <to variable="Invoke_1_callback_InputVariable_1"
+                            part="parameters" query="/ns1:callback/arg1"/>
+                    </copy>
+                    <copy>
+                        <from>
+                            <EndpointReference xmlns="http://www.w3.org/2005/08/addressing">
+                                <Address/>
+                            </EndpointReference>
+                        </from>
+                        <to variable="partnerLink"/>
+                    </copy>
+                    <copy>
+                        <from variable="inputVariable" part="payload"
+                              query="/ns3:process/ns4:url"/>
+                        <to query="/ns14:EndpointReference/ns14:Address"
+                            variable="partnerLink"/>
+                    </copy>
+                    <copy>
+                        <from variable="partnerLink"/>
+                        <to partnerLink="CallbackService"/>
+                    </copy>
+                </assign>
+                <invoke name="InvokeErrorCallback"
+                        inputVariable="Invoke_1_callback_InputVariable_1"
+                        outputVariable="Invoke_1_callback_OutputVariable_1"
+                        portType="ns1:CallbackService"
+                        partnerLink="CallbackService" operation="callback"/>
+            </sequence>
+        </catchAll>
+    </faultHandlers>
+
+    <!-- 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+       ORCHESTRATION LOGIC                                               
+       Set of activities coordinating the flow of messages across the    
+       services integrated within this business process                  
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    -->
+    <sequence name="main">
+        <!-- Receive input from requestor. (Note: This maps to operation defined in ApprovalProcess.wsdl) --><receive name="receiveInput" partnerLink="RequestApprovalService" portType="client:ApprovalProcess" operation="process" variable="inputVariable" createInstance="yes"/>
+        <bpelx:exec name="log_input_payload" version="1.5" language="java">
+            <![CDATA[System.out.println("logging input payload");
+
+
+try {
+
+oracle.xml.parser.v2.XMLElement inputPayload = 
+(oracle.xml.parser.v2.XMLElement)getVariableData("inputVariable","payload");
+
+java.io.StringWriter writer = new java.io.StringWriter();
+ inputPayload.print(writer);
+ String payloadAsString = writer.toString();
+ System.out.println("input=" + payloadAsString);
+}
+catch ( Exception e) { 
+ e.printStackTrace();
+}]]>
+        </bpelx:exec>
+        <assign name="Assign_oimurl">
+            <copy>
+                <from expression="ora:getPreference('oimurl')"/>
+                <to variable="oimurl"/>
+            </copy>
+            <copy>
+                <from expression="string('http://iam-aus-e003.corp.wayport.net:14000')"/>
+                <to variable="BaseWebsiteUrl"/>
+            </copy>
+        </assign>
+        <bpelx:exec name="GetOrgAdminAndAct" version="1.5" language="java">
+            <![CDATA[try {                
+    System.out.println("Self Registration Approval by Organization Administrator");           
+    String oimUserName = "";           
+    String oimPassword = "";           
+    String oimURL = "";           
+	     
+     //get oimurl           
+    Object obj = getVariableData("oimurl");               
+    oimURL = obj.toString();              
+       
+   // System.out.println("oimurl=" + oimURL);     
+    
+    //get system administrator?s credentials            
+    oracle.security.jps.JpsContext ctx = oracle.security.jps.JpsContextFactory.getContextFactory().getContext();            
+  //  System.out.println("ctx=" + ctx);    
+    final oracle.security.jps.service.credstore.CredentialStore cs =             
+ 		(oracle.security.jps.service.credstore.CredentialStore)ctx.getServiceInstance(oracle.security.jps.service.credstore.CredentialStore.class); 				            
+  //  System.out.println("cs=" + cs);    
+    oracle.security.jps.service.credstore.CredentialMap cmap = cs.getCredentialMap("oim");            
+  //  System.out.println("cmap=" + cmap);    
+    oracle.security.jps.service.credstore.Credential cred = cmap.getCredential("sysadmin");            
+  //  System.out.println("cred sysadmin=" + cred);    
+    if (cred instanceof oracle.security.jps.service.credstore.PasswordCredential) {            
+            oracle.security.jps.service.credstore.PasswordCredential pcred = (oracle.security.jps.service.credstore.PasswordCredential)cred;            
+            char[] p = pcred.getPassword();            
+            oimUserName = pcred.getName();            
+            oimPassword = new String(p);            
+    }     
+     
+       
+    
+    // set the initial context factory           
+    String oimInitialContextFactory = "weblogic.jndi.WLInitialContextFactory";             
+    // set up the environment for making the OIM API invocation           
+    java.util.Hashtable env = new java.util.Hashtable();     
+    env.put(oracle.iam.platform.OIMClient.JAVA_NAMING_FACTORY_INITIAL,     
+    oimInitialContextFactory); 	        
+    env.put(oracle.iam.platform.OIMClient.JAVA_NAMING_PROVIDER_URL, oimURL);   	     
+    oracle.iam.platform.OIMClient client = new oracle.iam.platform.OIMClient(env);           
+    System.out.println("Trying to login to OIM");    
+    client.login(oimUserName, oimPassword.toCharArray());           
+    System.out.println("Login Successful");           
+    // get the RequestService to get details of the request           
+    oracle.iam.request.api.RequestService reqSvc =     
+                        (oracle.iam.request.api.RequestService)client.getService(oracle.iam.request.api.RequestService.class);	     
+    Object reqIdXMLElem = getVariableData("inputVariable","payload","/ns3:process/ns4:RequestID");	     
+    String reqId = ((oracle.xml.parser.v2.XMLElement)reqIdXMLElem).getText();               
+        
+    System.out.println("The request ID is "+reqId);           
+    // invoke the getBasicRequestData() method on the RequestService API           
+    oracle.iam.request.vo.Request req = reqSvc.getBasicRequestData(reqId);           
+    String org_id = "";    
+    String org_pin = "";    
+    java.util.List< oracle.iam.request.vo.RequestEntity> targetEntities = req.getTargetEntities();           
+        
+        
+    
+    System.out.println("---");    
+    for( oracle.iam.request.vo.RequestEntity reqEntity: targetEntities){          
+        java.util.List< oracle.iam.request.vo.RequestEntityAttribute> attributes = reqEntity.getEntityData();           
+        for( oracle.iam.request.vo.RequestEntityAttribute attribute : attributes){         
+            System.out.println("entity: " + attribute.getName() + " = " + attribute.getValue() );    
+            if ( attribute.getName().equalsIgnoreCase("org_pin")) {    
+                org_pin = attribute.getValue().toString();    
+            } else if ( attribute.getName().equalsIgnoreCase("Email")) {    
+                setVariableData("emailAddress", attribute.getValue().toString());    
+            } else if ( attribute.getName().equalsIgnoreCase("First Name")) {    
+                setVariableData("firstName", attribute.getValue().toString());    
+            } else if ( attribute.getName().equalsIgnoreCase("Last Name")) {    
+                setVariableData("lastName", attribute.getValue().toString());    
+            } else if ( attribute.getName().equalsIgnoreCase("Display Name")) {    
+                setVariableData("displayName", attribute.getValue().toString());    
+            } else if ( attribute.getName().equalsIgnoreCase("User Login")) {    
+                setVariableData("userLogin", attribute.getValue().toString());    
+            }    
+         }           
+    }           
+    System.out.println("---");    
+       
+    System.out.println("Organization pin is " + org_pin);    
+    
+  // default admins    
+  setVariableData("orgadmin","aws_delegated_admin_default");    
+       
+// set the organization key as well.    
+if ( org_pin != "" ) {    
+    System.out.println("Looking for the Organization based on grp_id (PIN)");    
+    Thor.API.Operations.tcOrganizationOperationsIntf orgAPI = (Thor.API.Operations.tcOrganizationOperationsIntf)client.getService(Thor.API.Operations.tcOrganizationOperationsIntf.class);      
+    java.util.Hashtable org_srch_map = new java.util.Hashtable();     
+    org_srch_map.put( "pin", org_pin);    
+    Thor.API.tcResultSet orgsrc_result = orgAPI.findOrganizations(org_srch_map);    
+    System.out.println("result set = " + orgsrc_result);    
+    
+    
+   int rowCount = orgsrc_result.getRowCount();    
+    System.out.println("rowCount = " + rowCount);    
+    for ( int j = 0; j < rowCount; j++) {    
+        orgsrc_result.goToRow(j);    
+        org_id = orgsrc_result.getStringValue("ORG_UDF_GRP_ID");    
+        setVariableData("orgadmin","aws_delegated_admin_" + org_id);       
+        setVariableData("orgName", orgsrc_result.getStringValue("ACT_NAME"));    
+    }    
+    
+}    
+    
+// change the request's pin value for the org id field, to the actual org id value    
+    
+               
+    setVariableData("orggrpid", org_id);    
+    Object obj1 = getVariableData("orgadmin");    
+    System.out.println("OrganizationAdmins = " + obj1.toString());        
+    System.out.println("--new code for getting role members--");    
+        
+         
+     String adminName = "";    
+     String adminEmail = "";    
+        
+        try {    
+            oracle.iam.identity.rolemgmt.api.RoleManager rmgr = client.getService(oracle.iam.identity.rolemgmt.api.RoleManager.class);    
+            
+            // known role for testing    
+           // oracle.iam.identity.rolemgmt.vo.Role role = rmgr.getDetails("6",null);    
+                
+    
+            oracle.iam.identity.rolemgmt.vo.Role role = rmgr.getDetails("Role Name", obj1.toString(), null);    
+            System.out.println("role -> " + role);    
+            java.util.List<oracle.iam.identity.usermgmt.vo.User>  members = rmgr.getRoleMembers(role.getEntityId(), false);    
+ /////////  Modified from here ///////////////////////////////////////////////////               
+            // if admin list is empty and the request was for a specific role rather than default admin group    
+            if (members.size() < 1 && !obj1.toString().equalsIgnoreCase("aws_delegated_admin_default")) {    
+                // let's get admins from a default list    
+                setVariableData("orgadmin","aws_delegated_admin_default");    
+                role = rmgr.getDetails("Role Name", obj1.toString(), null);    
+                members = rmgr.getRoleMembers(role.getEntityId(), false);    
+            }    
+/////////// Modifications end here //////////////////////////////////////////                 
+        for ( int z=0; z<members.size(); z++ ) {    
+            if ( adminName.length() == 0 ) {     
+                adminName = members.get(z).getDisplayName();    
+                adminEmail = members.get(z).getEmail();    
+            }    
+            else {    
+                adminName = adminName + ":" +  members.get(z).getDisplayName();    
+                adminEmail = adminEmail + ":" + members.get(z).getEmail();    
+            }    
+            System.out.println("member [" + z + "] ->" + members.get(z).getDisplayName() + "<" + members.get(z).getEmail() + ">");    
+        }    
+            setVariableData("listAdminEmails", adminEmail);    
+            setVariableData("listAdminNames", adminName);    
+            
+        } catch (Exception e) {    
+          System.out.println("problem with rolemanager code");    
+          System.out.println(e.getMessage() );    
+          e.printStackTrace();    
+        }    
+    
+} catch (Exception e){     
+    System.out.println("----------------------");           
+    e.printStackTrace();           
+    System.out.println("----------------------");           
+}]]>
+        </bpelx:exec>
+        <assign name="AssignRequestWSURL"
+                xmlns="http://schemas.xmlsoap.org/ws/2003/03/business-process/">
+      
+      
+      
+   <copy>
+         <from><EndpointReference xmlns="http://www.w3.org/2005/08/addressing"><Address/>
+                    </EndpointReference>
+              </from>
+         <to variable="partnerLink"/>
+      </copy><copy>
+         <from expression="concat(substring-before(bpws:getVariableData('inputVariable','payload','/ns3:process/ns4:url'),'workflowservice'),'reqsvc/reqsvc')"/>
+         <to variable="partnerLink"
+             query="/ns14:EndpointReference/ns14:Address"/>
+      </copy><copy>
+         <from variable="partnerLink"/>
+         <to partnerLink="RequestWSPartnerLink"/>
+      </copy></assign>
+        <!-- 
+          Asynchronous callback to the requester. (Note: the callback location and correlation id is transparently handled using WS-addressing.)
+        -->
+        <scope name="ApprovalTask_1"
+               xmlns="http://schemas.xmlsoap.org/ws/2003/03/business-process/"
+               xmlns:wf="http://schemas.oracle.com/bpel/extension/workflow"
+               wf:key="ApprovalTask_1_globalVariable">
+            <bpelx:annotation xmlns:bpelx="http://schemas.oracle.com/bpel/extension">
+                <bpelx:pattern patternName="bpelx:workflow"></bpelx:pattern>
+            </bpelx:annotation>
+            <variables>
+                <variable name="initiateTaskInput"
+                          messageType="ns2:initiateTaskMessage"/>
+                <variable name="initiateTaskResponseMessage"
+                          messageType="ns2:initiateTaskResponseMessage"/>
+            </variables>
+            <sequence>
+                <assign name="ApprovalTask_1_AssignTaskAttributes">
+                    <!--
+                    <copy>
+                        <from variable="orggrpid"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/ns2:initiateTask/task:task/task:payload/task:grp_id"/>
+                    </copy>
+                    -->
+                    <copy>
+                        <from expression="number(3)"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/ns2:initiateTask/task:task/task:priority"/>
+                    </copy>
+                    <copy>
+                        <from><payload xmlns="http://xmlns.oracle.com/bpel/workflow/task">
+                                <RequestID xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+                                <RequestModel xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+                                <RequestTarget xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+                                <url xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+                                <RequesterDetails xmlns="http://xmlns.oracle.com/request/RequestDetails"/>
+                                <BeneficiaryDetails xmlns="http://xmlns.oracle.com/request/RequestDetails"/>
+                                <ObjectDetails xmlns="http://xmlns.oracle.com/request/RequestDetails"/>
+                                <OtherDetails xmlns="http://xmlns.oracle.com/request/RequestDetails"/>
+                                <RequesterDisplayName xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+                                <BeneficiaryDisplayName xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+                                <Requester xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+                                <OrganizationAdmin xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+                                <Organization xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+                                <grp_id xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+                                <BaseWebsiteUrl xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+                              
+                            </payload></from>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/ns2:initiateTask/task:task/task:payload"/>
+                    </copy>
+                    <copy>
+                        <from variable="inputVariable" part="payload"
+                              query="/ns3:process/ns4:RequestID"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/ns2:initiateTask/task:task/task:payload/task:RequestID"/>
+                    </copy>
+                    <copy>
+                        <from variable="inputVariable" part="payload"
+                              query="/ns3:process/ns4:RequestModel"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/ns2:initiateTask/task:task/task:payload/task:RequestModel"/>
+                    </copy>
+                    <copy>
+                        <from variable="inputVariable" part="payload"
+                              query="/ns3:process/ns4:RequestTarget"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/ns2:initiateTask/task:task/task:payload/task:RequestTarget"/>
+                    </copy>
+                    <copy>
+                        <from variable="inputVariable" part="payload"
+                              query="/ns3:process/ns4:url"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/ns2:initiateTask/task:task/task:payload/task:url"/>
+                    </copy>
+                    <copy>
+                        <from variable="inputVariable" part="payload"
+                              query="/ns3:process/ns4:RequesterDetails"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/ns2:initiateTask/task:task/task:payload/ns4:RequesterDetails"/>
+                    </copy>
+                    <copy>
+                        <from variable="inputVariable" part="payload"
+                              query="/ns3:process/ns4:BeneficiaryDetails"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/ns2:initiateTask/task:task/task:payload/ns4:BeneficiaryDetails"/>
+                    </copy>
+                    <copy>
+                        <from variable="inputVariable" part="payload"
+                              query="/ns3:process/ns4:ObjectDetails"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/ns2:initiateTask/task:task/task:payload/ns4:ObjectDetails"/>
+                    </copy>
+                    <copy>
+                        <from variable="inputVariable" part="payload"
+                              query="/ns3:process/ns4:OtherDetails"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/ns2:initiateTask/task:task/task:payload/ns4:OtherDetails"/>
+                    </copy>
+                    <copy>
+                        <from variable="inputVariable" part="payload"
+                              query="/ns3:process/ns4:RequesterDetails/ns4:DisplayName"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/ns2:initiateTask/task:task/task:payload/task:RequesterDisplayName"/>
+                    </copy>
+                    <copy>
+                        <from variable="inputVariable" part="payload"
+                              query="/ns3:process/ns4:BeneficiaryDetails/ns4:DisplayName"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/ns2:initiateTask/task:task/task:payload/task:BeneficiaryDisplayName"/>
+                    </copy>
+                    <copy>
+                        <from variable="inputVariable" part="payload"
+                              query="/ns3:process/ns4:RequesterDetails/ns4:Login"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/ns2:initiateTask/task:task/task:payload/task:Requester"/>
+                    </copy>
+                    <copy>
+                        <from variable="inputVariable" part="payload"
+                              query="/ns3:process/ns4:RequestID"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/ns2:initiateTask/task:task/task:identificationKey"/>
+                    </copy>
+                    <copy>
+                        <from variable="inputVariable" part="payload"
+                              query="/ns3:process/ns4:RequesterDetails/ns4:Login"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/ns2:initiateTask/task:task/task:creator"/>
+                    </copy>
+                    <copy>
+                        <from variable="orgadmin"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/ns2:initiateTask/task:task/task:payload/task:OrganizationAdmin"/>
+                    </copy>
+                    <copy>
+                        <from variable="orgName"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/ns2:initiateTask/task:task/task:payload/task:Organization"/>
+                    </copy>
+                    <copy>
+                        <from variable="orggrpid"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/ns2:initiateTask/task:task/task:payload/task:grp_id"/>
+                    </copy>
+                    <copy>
+                        <from variable="BaseWebsiteUrl"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/ns2:initiateTask/task:task/task:payload/task:BaseWebsiteUrl"/>
+                    </copy>
+                </assign>
+                <assign name="Assign_emailinfo">
+                    <copy>
+                        <from variable="inputVariable" part="payload"
+                              query="/ns3:process/ns4:RequestID"/>
+                        <to variable="EmailInfo"
+                            query="/ns18:EmailContract/ns18:RequestID"/>
+                    </copy>
+                    <copy>
+                        <from variable="BaseWebsiteUrl"/>
+                        <to variable="EmailInfo"
+                            query="/ns18:EmailContract/ns18:BaseWebsiteUrl"/>
+                    </copy>
+                    <copy>
+                        <from variable="orgName"/>
+                        <to variable="EmailInfo"
+                            query="/ns18:EmailContract/ns18:Organization/ns18:Name"/>
+                    </copy>
+                    <copy>
+                        <from variable="userLogin"/>
+                        <to variable="EmailInfo"
+                            query="/ns18:EmailContract/ns18:Recipient/ns18:UserLogin"/>
+                    </copy>
+                    <copy>
+                        <from variable="userPassword"/>
+                        <to variable="EmailInfo"
+                            query="/ns18:EmailContract/ns18:Recipient/ns18:Password"/>
+                    </copy>
+                    <copy>
+                        <from variable="firstName"/>
+                        <to variable="EmailInfo"
+                            query="/ns18:EmailContract/ns18:Recipient/ns18:FirstName"/>
+                    </copy>
+                    <copy>
+                        <from variable="lastName"/>
+                        <to variable="EmailInfo"
+                            query="/ns18:EmailContract/ns18:Recipient/ns18:LastName"/>
+                    </copy>
+                    <copy>
+                        <from variable="emailAddress"/>
+                        <to variable="EmailInfo"
+                            query="/ns18:EmailContract/ns18:Recipient/ns18:EmailAddress"/>
+                    </copy>
+                </assign>
+                <bpelx:exec name="log_emailinfo" version="1.5" language="java">
+                    <![CDATA[System.out.println("logging EmailInfo payload");
+
+
+try {
+
+
+oracle.xml.parser.v2.XMLElement emailInfo = 
+(oracle.xml.parser.v2.XMLElement)getVariableData("EmailInfo");
+
+java.io.StringWriter eWriter = new java.io.StringWriter();
+ emailInfo.print(eWriter);
+ String emailPayloadAsString = eWriter.toString();
+ System.out.println("email input=" + emailPayloadAsString);
+ 
+ 
+}
+catch ( Exception e) { 
+ e.printStackTrace();
+}]]>
+                </bpelx:exec>
+                <scope name="Email1">
+                    <bpelx:annotation>
+                        <bpelx:pattern patternName="bpelx:email"></bpelx:pattern>
+                        <bpelx:general>
+                            <bpelx:property name="userLabel">
+                                <![CDATA[email_tracking_number]]>
+                            </bpelx:property>
+                        </bpelx:general>
+                    </bpelx:annotation>
+                    <variables>
+                        <variable name="varNotificationReq"
+                                  messageType="ns16:EmailNotificationRequest"/>
+                        <variable name="varNotificationResponse"
+                                  messageType="ns16:ArrayOfResponse"/>
+                        <variable name="NotificationServiceFaultVariable"
+                                  messageType="ns16:NotificationServiceErrorMessage"/>
+                    </variables>
+                    <sequence name="Sequence1">
+                        <assign name="EmailParamsAssign">
+                            <!--
+                            <copy>
+                                <from expression="ora:readFile('file:///prod/app/oracle/product/fmw/img/ATT_Wi-Fi_Solutions.png')"/>
+                                <to variable="varNotificationReq"
+                                    part="EmailPayload"
+                                    query="/EmailPayload/ns16:Content/ns16:ContentBody/ns16:MultiPart/ns16:BodyPart[2]/ns16:ContentBody"/>
+                            </copy>
+                            -->
+                            <copy>
+                                <from expression="string('Default')"/>
+                                <to variable="varNotificationReq"
+                                    part="EmailPayload"
+                                    query="/EmailPayload/ns16:FromAccountName"/>
+                            </copy>
+                            <copy>
+                                <from expression="string('')"/>
+                                <to variable="varNotificationReq"
+                                    part="EmailPayload"
+                                    query="/EmailPayload/ns16:FromUserName"/>
+                            </copy>
+                            <copy>
+                                <from expression="string('')"/>
+                                <to variable="varNotificationReq"
+                                    part="EmailPayload"
+                                    query="/EmailPayload/ns16:Bcc"/>
+                            </copy>
+                            <copy>
+                                <from expression="string('')"/>
+                                <to variable="varNotificationReq"
+                                    part="EmailPayload"
+                                    query="/EmailPayload/ns16:Cc"/>
+                            </copy>
+                            <copy>
+                                <from expression="string('')"/>
+                                <to variable="varNotificationReq"
+                                    part="EmailPayload"
+                                    query="/EmailPayload/ns16:ReplyToAddress"/>
+                            </copy>
+                            <copy>
+                                <from expression="string('ACTION REQUIRED: AT&amp;T Wi-Fi Solutions Account Request Receipt')"/>
+                                <to variable="varNotificationReq"
+                                    part="EmailPayload"
+                                    query="/EmailPayload/ns16:Subject"/>
+                            </copy>
+                            <copy>
+                                <from expression="bpws:getVariableData('emailAddress')"/>
+                                <to variable="varNotificationReq"
+                                    part="EmailPayload"
+                                    query="/EmailPayload/ns16:To"/>
+                            </copy>
+                            <copy>
+                                <from expression="ora:processXSLT('./xsl/emailTrackingNumber.xsl',bpws:getVariableData('EmailInfo') )"/>
+                                <to variable="varNotificationReq"
+                                    part="EmailPayload"
+                                    query="/EmailPayload/ns16:Content/ns16:ContentBody"/>
+                            </copy>
+                            <copy>
+                                <from expression="string('text/html; charset=UTF-8')"/>
+                                <to variable="varNotificationReq"
+                                    part="EmailPayload"
+                                    query="/EmailPayload/ns16:Content/ns16:MimeType"/>
+                            </copy>
+                        </assign>
+                        <invoke name="InvokeNotificationService"
+                                portType="ns16:NotificationService"
+                                partnerLink="NotifyTracking"
+                                inputVariable="varNotificationReq"
+                                outputVariable="varNotificationResponse"
+                                operation="sendEmailNotification"/>
+                    </sequence>
+                </scope>
+                <while name="While_we_have_admins_to_email"
+                       condition="string-length(bpws:getVariableData('listAdminEmails')) > 0">
+                    <sequence name="Sequence3">
+                        <bpelx:exec name="pop_admin_off_list" version="1.5"
+                                    language="java">
+                            <![CDATA[//System.out.println("Start pop admin off list");
+
+String admins = getVariableData("listAdminNames").toString();
+String emails = getVariableData("listAdminEmails").toString();
+
+String[] listAdmins = admins.split(":");
+String[] listEmails = emails.split(":");
+// pop an admin off the stack, and reset the variables
+setVariableData("adminName", listAdmins[0]);
+setVariableData("adminEmail", listEmails[0]);
+// push the email info back to the list variables
+
+if ( listAdmins.length > 1 ) {
+setVariableData("listAdminNames", admins.replace( listAdmins[0] +":",""));
+setVariableData("listAdminEmails", emails.replace( listEmails[0] +":",""));
+}
+else
+{
+setVariableData("listAdminNames","");
+setVariableData("listAdminEmails","");
+}
+
+//System.out.println("listAdminNames -> " + getVariableData("listAdminNames"));
+//System.out.println("listAdminEmails -> " + getVariableData("listAdminEmails"));
+//System.out.println("End pop admin off list");]]>
+                        </bpelx:exec>
+                        <assign name="assign_admin_to_payload">
+                            <copy>
+                                <from variable="adminName"/>
+                                <to variable="EmailInfo"
+                                    query="/ns18:EmailContract/ns18:Organization/ns18:Admins/ns18:Name"/>
+                            </copy>
+                            <copy>
+                                <from variable="adminEmail"/>
+                                <to variable="EmailInfo"
+                                    query="/ns18:EmailContract/ns18:Organization/ns18:Admins/ns18:Email"/>
+                            </copy>
+                        </assign>
+                        <bpelx:exec name="log_email_payload"
+                                                 version="1.5" language="java"
+                                                 xmlns:bpelx="http://schemas.oracle.com/bpel/extension">
+      <![CDATA[System.out.println("logging EmailInfo payload");
+
+
+try {
+
+
+oracle.xml.parser.v2.XMLElement emailInfo = 
+(oracle.xml.parser.v2.XMLElement)getVariableData("EmailInfo");
+
+java.io.StringWriter eWriter = new java.io.StringWriter();
+ emailInfo.print(eWriter);
+ String emailPayloadAsString = eWriter.toString();
+ System.out.println("email input=" + emailPayloadAsString);
+ 
+ 
+}
+catch ( Exception e) { 
+ e.printStackTrace();
+}]]>
+   </bpelx:exec><scope name="Email2">
+                            <bpelx:annotation>
+                                <bpelx:pattern patternName="bpelx:email"></bpelx:pattern>
+                                <bpelx:general>
+                                    <bpelx:property name="userLabel">
+                                        <![CDATA[Email_Admins]]>
+                                    </bpelx:property>
+                                </bpelx:general>
+                            </bpelx:annotation>
+                            <variables>
+                                <variable name="varNotificationReq"
+                                          messageType="ns16:EmailNotificationRequest"/>
+                                <variable name="varNotificationResponse"
+                                          messageType="ns16:ArrayOfResponse"/>
+                                <variable name="NotificationServiceFaultVariable"
+                                          messageType="ns16:NotificationServiceErrorMessage"/>
+                            </variables>
+                            <sequence name="Sequence2">
+                                <assign name="EmailParamsAssign">
+                                    <!-- 
+                            <copy>
+                                <from expression="string('')"/>
+                                <to variable="varNotificationReq"
+                                    part="EmailPayload"
+                                    query="/EmailPayload/ns16:To"/>
+                            </copy>
+                            -->
+                                    <copy>
+                                        <from expression="string('Default')"/>
+                                        <to variable="varNotificationReq"
+                                            part="EmailPayload"
+                                            query="/EmailPayload/ns16:FromAccountName"/>
+                                    </copy>
+                                    <copy>
+                                        <from expression="string('')"/>
+                                        <to variable="varNotificationReq"
+                                            part="EmailPayload"
+                                            query="/EmailPayload/ns16:FromUserName"/>
+                                    </copy>
+                                    <copy>
+                                        <from expression="string('')"/>
+                                        <to variable="varNotificationReq"
+                                            part="EmailPayload"
+                                            query="/EmailPayload/ns16:Bcc"/>
+                                    </copy>
+                                    <copy>
+                                        <from expression="string('')"/>
+                                        <to variable="varNotificationReq"
+                                            part="EmailPayload"
+                                            query="/EmailPayload/ns16:Cc"/>
+                                    </copy>
+                                    <copy>
+                                        <from expression="string('')"/>
+                                        <to variable="varNotificationReq"
+                                            part="EmailPayload"
+                                            query="/EmailPayload/ns16:ReplyToAddress"/>
+                                    </copy>
+                                    <copy>
+                                        <from expression="string('ACTION REQUIRED: AT&amp;T Wi-Fi Solutions Account Request Review')"/>
+                                        <to variable="varNotificationReq"
+                                            part="EmailPayload"
+                                            query="/EmailPayload/ns16:Subject"/>
+                                    </copy>
+                                    <copy>
+                                        <from expression="concat(string('&quot;'), bpws:getVariableData('adminName'), string('&quot;&lt;'), bpws:getVariableData('adminEmail'), string('&gt;'))"/>
+                                        <to variable="varNotificationReq"
+                                            part="EmailPayload"
+                                            query="/EmailPayload/ns16:To"/>
+                                    </copy>
+                                    <copy>
+                                        <from expression="ora:processXSLT('./xsl/emailNotificationToAdmins.xsl',bpws:getVariableData('EmailInfo') )"/>
+                                        <to variable="varNotificationReq"
+                                            part="EmailPayload"
+                                            query="/EmailPayload/ns16:Content/ns16:ContentBody"/>
+                                    </copy>
+                                    <copy>
+                                        <from expression="string('text/html; charset=UTF-8')"/>
+                                        <to variable="varNotificationReq"
+                                            part="EmailPayload"
+                                            query="/EmailPayload/ns16:Content/ns16:MimeType"/>
+                                    </copy>
+                                </assign>
+                                <invoke name="InvokeNotificationService"
+                                        portType="ns16:NotificationService"
+                                        partnerLink="NotificationAdmins"
+                                        inputVariable="varNotificationReq"
+                                        outputVariable="varNotificationResponse"
+                                        operation="sendEmailNotification"/>
+                            </sequence>
+                        </scope>
+                    </sequence>
+                </while>
+                <invoke name="initiateTask_ApprovalTask_1"
+                        partnerLink="ApprovalTask.TaskService_1"
+                        portType="ns2:TaskService" operation="initiateTask"
+                        inputVariable="initiateTaskInput"
+                        outputVariable="initiateTaskResponseMessage"/>
+                <receive name="receiveCompletedTask_ApprovalTask_1"
+                         partnerLink="ApprovalTask.TaskService_1"
+                         portType="ns2:TaskServiceCallback"
+                         operation="onTaskCompleted"
+                         variable="ApprovalTask_1_globalVariable"
+                         createInstance="no"/>
+            </sequence>
+        </scope>
+        <switch name="taskSwitch">
+            <case condition="bpws:getVariableData('ApprovalTask_1_globalVariable', 'payload', '/task:task/task:systemAttributes/task:state') = 'COMPLETED' and bpws:getVariableData('ApprovalTask_1_globalVariable', 'payload', '/task:task/task:systemAttributes/task:outcome') = 'REJECT'">
+                <bpelx:annotation>
+                    <bpelx:pattern>Task outcome is REJECT</bpelx:pattern>
+                    <bpelx:general>
+                        <bpelx:property name="userLabel">Task outcome is REJECT</bpelx:property>
+                    </bpelx:general>
+                </bpelx:annotation>
+                <sequence>
+                    <assign>
+                        <copy>
+                            <from expression="string('rejected')"/>
+                            <to variable="outputVariable" part="payload"
+                                query="/ns3:processResponse/ns3:result"/>
+                        </copy>
+                        <copy>
+                            <from expression="ora:getConversationId()"/>
+                            <to variable="Invoke_1_callback_InputVariable_1"
+                                part="parameters" query="/ns1:callback/arg0"/>
+                        </copy>
+                        <copy>
+                            <from expression="string('rejected')"/>
+                            <to variable="Invoke_1_callback_InputVariable_1"
+                                part="parameters" query="/ns1:callback/arg1"/>
+                        </copy>
+                    </assign>
+                </sequence>
+            </case>
+            <case condition="bpws:getVariableData('ApprovalTask_1_globalVariable', 'payload', '/task:task/task:systemAttributes/task:state') = 'COMPLETED' and bpws:getVariableData('ApprovalTask_1_globalVariable', 'payload', '/task:task/task:systemAttributes/task:outcome') = 'APPROVE'">
+                <bpelx:annotation>
+                    <bpelx:pattern>Task outcome is APPROVE</bpelx:pattern>
+                    <bpelx:general>
+                        <bpelx:property name="userLabel">Task outcome is APPROVE</bpelx:property>
+                    </bpelx:general>
+                </bpelx:annotation>
+                <sequence>
+                    <assign>
+                        <copy>
+                            <from expression="string('approved')"/>
+                            <to variable="outputVariable" part="payload"
+                                query="/ns3:processResponse/ns3:result"/>
+                        </copy>
+                        <copy>
+                            <from expression="ora:getConversationId()"/>
+                            <to variable="Invoke_1_callback_InputVariable_1"
+                                part="parameters" query="/ns1:callback/arg0"/>
+                        </copy>
+                        <copy>
+                            <from expression="string('approved')"/>
+                            <to variable="Invoke_1_callback_InputVariable_1"
+                                part="parameters" query="/ns1:callback/arg1"/>
+                        </copy>
+                    </assign></sequence>
+            </case>
+            <otherwise>
+                <sequence>
+                    <assign>
+                        <copy>
+                            <from expression="bpws:getVariableData('ApprovalTask_1_globalVariable','payload','/task:task/task:systemAttributes/task:state')"/>
+                            <to variable="outputVariable" part="payload"
+                                query="/ns3:processResponse/ns3:result"/>
+                        </copy>
+                        <copy>
+                            <from expression="ora:getConversationId()"/>
+                            <to variable="Invoke_1_callback_InputVariable_1"
+                                part="parameters" query="/ns1:callback/arg0"/>
+                        </copy>
+                        <copy>
+                            <from expression="bpws:getVariableData('ApprovalTask_1_globalVariable','payload','/task:task/task:systemAttributes/task:state')"/>
+                            <to variable="Invoke_1_callback_InputVariable_1"
+                                part="parameters" query="/ns1:callback/arg1"/>
+                        </copy>
+                    </assign>
+                </sequence>
+            </otherwise>
+        </switch>
+        <assign name="Assign_1">
+            <copy>
+                <from>
+                    <EndpointReference xmlns="http://www.w3.org/2005/08/addressing">
+                        <Address/>
+                    </EndpointReference>
+                </from>
+                <to variable="partnerLink"/>
+            </copy>
+            <copy>
+                <from variable="inputVariable" part="payload"
+                      query="/ns3:process/ns4:url"/>
+                <to variable="partnerLink"
+                    query="/ns14:EndpointReference/ns14:Address"/>
+            </copy>
+            <copy>
+                <from variable="partnerLink"/>
+                <to partnerLink="CallbackService"/>
+            </copy>
+        </assign>
+        <invoke name="Invoke_1"
+                inputVariable="Invoke_1_callback_InputVariable_1"
+                outputVariable="Invoke_1_callback_OutputVariable_1"
+                partnerLink="CallbackService" portType="ns1:CallbackService"
+                operation="callback"/>
+        <invoke name="callbackClient" partnerLink="RequestApprovalService" portType="client:ApprovalProcessCallback" operation="processResponse" inputVariable="outputVariable"/>
+    </sequence>
+</process>

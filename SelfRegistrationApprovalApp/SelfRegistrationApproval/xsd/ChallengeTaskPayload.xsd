@@ -1,0 +1,19 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<schema targetNamespace="http://xmlns.oracle.com/bpel/workflow/task" xmlns:tns="http://xmlns.oracle.com/bpel/workflow/task" attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns="http://www.w3.org/2001/XMLSchema" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ns0="http://xmlns.oracle.com/request/RequestDetails">
+   <import namespace="http://xmlns.oracle.com/request/RequestDetails" schemaLocation="RequestDetails.xsd"/>
+   <complexType name="ChallengeTaskPayloadType">
+      <sequence>
+         <element name="RequestID" type="xsd:string"/>
+         <element name="RequestModel" type="xsd:string"/>
+         <element name="RequestTarget" type="xsd:string"/>
+         <element ref="ns0:RequesterDetails"/>
+         <element ref="ns0:BeneficiaryDetails"/>
+         <element ref="ns0:ObjectDetails"/>
+         <element ref="ns0:OtherDetails"/>
+         <element ref="ns0:url"/>
+         <element name="RequesterDisplayName" type="xsd:string"/>
+         <element name="BeneficiaryDisplayName" type="xsd:string"/>
+         <element name="Requester" type="xsd:string"/>
+      </sequence>
+   </complexType>
+</schema>

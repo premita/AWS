@@ -1,0 +1,102 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<taskDefinition targetNamespace="http://xmlns.oracle.com/ApprovalApp/SelfRegistrationApproval/ChallengeTask" xmlns:xp20="http://www.oracle.com/XSL/Transform/java/oracle.tip.pc.services.functions.Xpath20" xmlns:ora="http://schemas.oracle.com/xpath/extension" xmlns:oraext="http://www.oracle.com/XSL/Transform/java/oracle.tip.pc.services.functions.ExtFunc" xmlns:task="http://xmlns.oracle.com/bpel/workflow/task" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://xmlns.oracle.com/bpel/workflow/taskDefinition"
+                xmlns:bpel2="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+                xmlns:ns0="http://xmlns.oracle.com/bpel/workflow/common"
+                xmlns:ns1="http://xmlns.oracle.com/request/RequestDetails"
+                xmlns:dvm="http://www.oracle.com/XSL/Transform/java/oracle.tip.dvm.LookupValue"
+                xmlns:evidence="http://xmlns.oracle.com/bpel/workflow/TaskEvidenceService"
+                xmlns:hwf="http://xmlns.oracle.com/bpel/workflow/xpath"
+                xmlns:ids="http://xmlns.oracle.com/bpel/services/IdentityService/xpath"
+                xmlns:bpm="http://xmlns.oracle.com/bpmn20/extensions"
+                xmlns:xref="http://www.oracle.com/XSL/Transform/java/oracle.tip.xref.xpath.XRefXPathFunctions">
+   <name>ChallengeTask</name>
+   <id>${domain_id}_${process_id}_${process_revision}_ChallengeTask</id>
+   <title type="XPATH"><value>concat(string('Challenge Task for Request ID '), /task:task/task:payload/task:RequestID)</value></title>
+   <priority>3</priority>
+   <process processId="" processVersion=""/>
+   <routingSlip xmlns="http://xmlns.oracle.com/bpel/workflow/routingSlip">
+      <globalConfiguration>
+         <applicationContext></applicationContext>
+         <taskOwner type="STATIC" identityType="group">SYSTEM ADMINISTRATORS</taskOwner>
+         <earlyCompletion inherit="root">
+            <outcome>ACCEPT</outcome>
+         </earlyCompletion>
+         <sharePayloadConfiguration>
+            <type>USE_SYSTEM_WIDE_GLOBAL_CONFIGURATION</type>
+         </sharePayloadConfiguration>
+      </globalConfiguration>
+      <participants isAdhocRoutingSupported="false">
+         <stage name="Stage1">
+            <participant name="Assignee Beneficiary">
+               <resource type="XPATH" identityType="user">/task:task/task:payload/ns1:BeneficiaryDetails/ns1:Login</resource>
+            </participant>
+         </stage>
+         <stage name="Stage2">
+            <participant name="Assignee Requester">
+               <resource type="XPATH" identityType="user">/task:task/task:payload/ns1:RequesterDetails/ns1:Login</resource>
+            </participant>
+         </stage>
+      </participants>
+      <notification includeTaskAttachments="false" actionable="true"
+                    secureNotifications="false" hideWorklistUrlInEmail="true">
+         <action name="ASSIGN" recipient="ASSIGNEES"><![CDATA[concat(string('Task '), /task:task/task:title, string(' requires your attention.'))]]></action>
+         <groupNotificationConfiguration>SEND_INDIVIDUAL_NOTIFICATION</groupNotificationConfiguration>
+      </notification>
+      <excludedParticipants>
+         <excludedParticipant>previousLaneParticipant</excludedParticipant>
+      </excludedParticipants>
+   </routingSlip>
+   <workflowConfiguration xmlns="http://xmlns.oracle.com/bpel/workflow/configuration"
+                          xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                          xmlns:ns0="http://xmlns.oracle.com/request/RequestDetails"
+                          xmlns:ns1="http://xmlns.oracle.com/request/RequestDetails">
+      <outcomes>
+         <outcome>ACCEPT</outcome>
+         <outcome>REJECT</outcome>
+      </outcomes>
+      <payload xmlSchemaDefinition="xsd/ChallengeTaskPayload.xsd">
+         <messageAttribute name="RequestID" attributeType="SIMPLE_TYPE"
+                           type="xsd:string" updatable="false"
+                           external="false"/>
+         <messageAttribute name="RequestModel" attributeType="SIMPLE_TYPE"
+                           type="xsd:string" updatable="false"
+                           external="false"/>
+         <messageAttribute name="RequestTarget" attributeType="SIMPLE_TYPE"
+                           type="xsd:string" updatable="false"
+                           external="false"/>
+         <messageAttribute name="RequesterDetails" attributeType="ELEMENT"
+                           type="ns1:RequesterDetails" updatable="false"
+                           external="false"/>
+         <messageAttribute name="BeneficiaryDetails" attributeType="ELEMENT"
+                           type="ns1:BeneficiaryDetails" updatable="false"
+                           external="false"/>
+         <messageAttribute name="ObjectDetails" attributeType="ELEMENT"
+                           type="ns1:ObjectDetails" updatable="false"
+                           external="false"/>
+         <messageAttribute name="OtherDetails" attributeType="ELEMENT"
+                           type="ns1:OtherDetails" updatable="false"
+                           external="false"/>
+         <messageAttribute name="url" attributeType="ELEMENT" type="ns1:url"
+                           updatable="false" external="false"/>
+         <messageAttribute name="RequesterDisplayName"
+                           attributeType="SIMPLE_TYPE" type="xsd:string"
+                           updatable="false" external="false"/>
+         <messageAttribute name="BeneficiaryDisplayName"
+                           attributeType="SIMPLE_TYPE" type="xsd:string"
+                           updatable="false" external="false"/>
+         <messageAttribute name="Requester" attributeType="SIMPLE_TYPE"
+                           type="xsd:string" updatable="false"
+                           external="false"/>
+      </payload>
+      <bpelEventListener>false</bpelEventListener>
+      <bpelNoCallbacks>false</bpelNoCallbacks>
+      <showCompleteGraphicalHistory>true</showCompleteGraphicalHistory>
+      <reevalTranslatablesOnUpdate>false</reevalTranslatablesOnUpdate>
+      <preActionMandatoryUserSteps/>
+      <allowInitiatorEditParticipants>false</allowInitiatorEditParticipants>
+      <allowParticipantsEditParticipants>false</allowParticipantsEditParticipants>
+      <globalCreationTask>false</globalCreationTask>
+      <enableAutoClaim>false</enableAutoClaim>
+      <workflowConditions/>
+   </workflowConfiguration>
+</taskDefinition>

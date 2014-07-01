@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/AccountData"
+     xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/AccountData"
+     xmlns:general="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/GeneralData"
+           xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+     xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc" jaxb:version="1.0" jaxb:extensionBindingPrefixes="xjc">
+    <xs:annotation>
+        <xs:appinfo>
+            <jaxb:schemaBindings>
+                <jaxb:package name="oracle.iam.requestdataws.webservicestubs.types"/>
+            </jaxb:schemaBindings>
+        </xs:appinfo>
+    </xs:annotation>
+     
+    <xs:import namespace="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/GeneralData" schemaLocation="GeneralRequestData.xsd" />
+    
+    <xs:element name="AccountKey" type="xs:string"/>
+ 	<xs:element name="AccountData" type="AccountDataType"/>
+ 	 
+    <xs:complexType name="AccountDataType">
+        <xs:sequence>
+            <xs:element name="AccountKey" type="xs:string" nillable="true" />
+            <xs:element name="ProcessInstanceKey" type="xs:string" nillable="true"/>
+            <xs:element name="UserKey" type="xs:string" nillable="true" />
+			<xs:element name="PolicyKey" type="xs:string" nillable="true" />
+			<xs:element name="AccountDescriptiveField" type="xs:string" nillable="true"/>
+			<xs:element name="AccountType" nillable="true">
+				  <xs:simpleType>
+				    <xs:restriction base="xs:string">
+				      <xs:enumeration value="primary"/>
+				      <xs:enumeration value="secondery"/>
+				      <xs:enumeration value="admin"/>
+				      <xs:enumeration value="other"/>
+				      <xs:enumeration value="serviceaccount"/>
+				      <xs:enumeration value="unknown"/>
+				    </xs:restriction>
+			  	</xs:simpleType>
+			</xs:element>
+			<xs:element name="RequestKey" type="xs:string" nillable="true"/>
+			<xs:element name="IsServiceAccount" type="xs:boolean" nillable="true" />
+			<xs:element name="ApplicationInstanceKey" type="xs:long" nillable="true"/>
+			<xs:element name="AccountData">
+			 	<xs:complexType>
+			 		<xs:sequence>
+				        <xs:element name="FormKey" type="xs:string" nillable="true"/>
+				        <xs:element name="UdTablePrimaryKey" type="xs:string" nillable="true"/>
+				        <xs:element name="ParentData" type="general:MapValueType" nillable="true"/>
+				        <xs:element name="ChildData" nillable="true">
+				        		<xs:complexType>
+							 		<xs:sequence>
+							 			<xs:element name="Key" maxOccurs="unbounded" nillable="true">
+								 			<xs:complexType>
+								        		<xs:sequence>
+								        			<xs:element name="ChildTableRecord" maxOccurs="unbounded" nillable="true">
+											 			<xs:complexType>
+											        		<xs:sequence>
+											        			<xs:element name="RowKey" type="xs:string" nillable="true"/>
+											        			<xs:element name="Action" nillable="true">
+											        					<xs:simpleType>
+																		    <xs:restriction base="xs:string">
+																		      <xs:enumeration value="Add"/>
+																		      <xs:enumeration value="Modify"/>
+																		      <xs:enumeration value="Delete"/>
+																		    </xs:restriction>
+																	  	</xs:simpleType>
+											        			</xs:element>
+											        			<xs:element name="ChildData" type="general:MapValueType" nillable="true"/>
+															</xs:sequence>
+														</xs:complexType>	
+								        			</xs:element>
+								        		</xs:sequence>
+								        		<xs:attribute name="ChildTableName" type="xs:string"/>
+								    		</xs:complexType>
+							    		</xs:element>
+							    	</xs:sequence>	
+    							</xs:complexType>
+				        </xs:element>
+        			</xs:sequence>
+    			</xs:complexType>
+			</xs:element>
+			
+        </xs:sequence>
+    </xs:complexType>
+    
+</xs:schema>
+

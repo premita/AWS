@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/RoleData"
+     xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/RoleData"
+     xmlns:general="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/GeneralData" 
+           xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+     xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc" jaxb:version="1.0" jaxb:extensionBindingPrefixes="xjc">
+    <xs:annotation>
+        <xs:appinfo>
+            <jaxb:schemaBindings>
+                <jaxb:package name="oracle.iam.requestdataws.webservicestubs.types"/>
+            </jaxb:schemaBindings>
+        </xs:appinfo>
+    </xs:annotation>
+     
+     
+ 	 
+ 	 <xs:import namespace="http://xmlns.oracle.com/RequestServiceApp/RequestDataService/GeneralData" schemaLocation="GeneralRequestData.xsd" />
+     
+     <xs:element name="RoleKey" type="xs:string"/>
+ 	 <xs:element name="RoleData" type="RoleDataType"/>
+ 	 
+     <xs:complexType name="RoleDataType">
+         <xs:sequence>
+            <xs:element name="RoleKey" type="general:MultiValueType" nillable="true"/>
+            <xs:element name="RoleName" type="general:MultiValueType" nillable="true"/>
+            <xs:element name="RoleEmail" type="general:MultiValueType" nillable="true"/>
+	    <xs:element name="RoleCategoryKey" type="general:MultiValueType" nillable="true"/>
+	    <xs:element name="RoleOwnerKey" type="general:MultiValueType" nillable="true"/>
+	    <xs:element name="RoleDisplayName" type="general:MultiValueType" nillable="true"/>
+
+<!-- 
+			<xs:element name="RoleUniqueName" type="general:MultiValueType"/>
+            <xs:element name="RoleNamespace" type="general:MultiValueType"/>
+            
+            <xs:element name="RoleDescription" type="general:MultiValueType"/>
+            <xs:element name="LDAPGUID" type="general:MultiValueType"/>
+            <xs:element name="LDAPDN" type="general:MultiValueType"/>
+            <xs:element name="UserMembershipRule" type="general:MultiValueType"/>
+            <xs:element name="ugp_updateby" type="general:MultiValueType"/> -->
+              <!--  Arbitrary Attribute Name and values -->            
+            <xs:element name="CustomAttribute" type="general:CustomAttributeType" maxOccurs="unbounded" nillable="true" /> 
+            <!--  Not included feilds
+            
+             <xs:element name="ugp_create" type="general:MultiValueType"/>
+            <xs:element name="ugp_update" type="general:MultiValueType"/>
+            <xs:element name="ugp_data_level" type="general:MultiValueType"/>
+            
+             -->
+        </xs:sequence>
+    </xs:complexType>
+
+</xs:schema>
+

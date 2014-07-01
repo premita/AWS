@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="windows-1252" ?>
+<xs:schema attributeFormDefault="unqualified"
+	elementFormDefault="qualified"
+        targetNamespace="http://xmlns.oracle.com/request/RequestDetails"
+        xmlns="http://xmlns.oracle.com/request/RequestDetails"
+	xmlns:xs="http://www.w3.org/2001/XMLSchema">
+ 
+  <xs:element name="RequestID" type="xs:string"  />
+  <xs:element name="RequestModel" type="xs:string" />
+  <xs:element name="RequestTarget" type="xs:string"/>
+  <xs:element name="RequesterDetails" type="UserDetails" />
+  <xs:element name="BeneficiaryDetails" type="UserDetails" />
+  <xs:element name="ObjectDetails" type="ObjectDetails"/>  
+  <xs:element name="url" type="xs:string" />
+  <xs:element name="OtherDetails"> 
+    <xs:complexType>
+      <xs:sequence>
+         <xs:element name="dataElement" type="detailtype" maxOccurs="unbounded"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element> 
+  
+    <xs:complexType name="UserDetails">
+      <xs:sequence>
+        <xs:element name="FirstName" type="xs:string"/>
+        <xs:element name="MiddleName" type="xs:string"/>
+        <xs:element name="LastName" type="xs:string"/>
+        <xs:element name="Login" type="xs:string"/>
+        <xs:element name="DisplayName" type="xs:string"/>
+        <xs:element name="ManagerLogin" type="xs:string"/>
+        <xs:element name="OrganizationName" type="xs:string"/>
+        <xs:element name="Email" type="xs:string"/>
+        <xs:element name="StartDate" type="xs:string"/>
+        <xs:element name="EndDate" type="xs:string"/>        
+        <xs:element name="Status" type="xs:string"/>
+        <xs:element name="XellerateType" type="xs:string"/>
+        <xs:element name="UserType" type="xs:string"/>
+        <xs:element name="Role" type="xs:string" maxOccurs="unbounded"/>
+         <xs:element name="attributes" type="detailtype" maxOccurs="unbounded"/>
+      </xs:sequence>
+    </xs:complexType>
+    
+    
+    
+      <xs:complexType name="ObjectDetails">
+      <xs:sequence>
+        <xs:element name="name" type="xs:string"/>
+        <xs:element name="type" type="xs:string"/>
+        <xs:element name="authorizer" type="xs:string"/>
+        <xs:element name="administrator" type="xs:string"/>
+         <xs:element name="attributes" type="detailtype" maxOccurs="unbounded"/>
+      </xs:sequence>
+     </xs:complexType>
+  
+     <xs:complexType name="detailtype">
+            <xs:sequence>
+              <xs:element name="Name" type="xs:string"/>
+              <xs:element name="Value" type="xs:string"/>
+            </xs:sequence>
+            <!--<xs:attribute name="mask" default="false"/>
+            <xs:attribute name="editable" default="false"/>-->
+   </xs:complexType>
+
+</xs:schema>
