@@ -4,14 +4,14 @@
    <annotationfile/>
    <iconize scope="no" catchall="no" dropzone="no" pick="no" catch="no" flow="no" javaembedding="no" onmessage="no" throw="no" onalarm="no" terminate="no" empty="no" sequence="no" compensate="no" optimize="no" transform="no" reply="no" validate="no" while="no" wait="no" compensationhandler="no" assign="no" receive="no" switch="no" invoke="no"/>
    <partnerlink_locations>
-      <partnerlink name="RequestApprovalService" x="0" y="579" side="left"/>
-      <partnerlink name="ApprovalTask.TaskService_1" x="0" y="18" side="left"/>
-      <partnerlink name="RequestWSPartnerLink" x="0" y="164" side="left"/>
-      <partnerlink name="CallbackService" x="913" y="612" side="right"/>
-      <partnerlink name="NotifyTracking" x="913" y="18" side="right"/>
-      <partnerlink name="NotificationAdmins" x="913" y="75" side="right"/>
+      <partnerlink name="RequestApprovalService" x="2" y="579" side="left"/>
+      <partnerlink name="CallbackService" x="908" y="612" side="right"/>
+      <partnerlink name="ApprovalTask.TaskService_1" x="908" y="18" side="right"/>
+      <partnerlink name="RequestWSPartnerLink" x="908" y="189" side="right"/>
+      <partnerlink name="NotifyTracking" x="908" y="75" side="right"/>
+      <partnerlink name="NotificationAdmins" x="908" y="132" side="right"/>
    </partnerlink_locations>
-   <graph_layout viewport="0,0,911,395" show_swimlanes="true">
+   <graph_layout viewport="0,75,1027,411" show_swimlanes="true">
       <layout_item collapsed="false" xpath="/process" type="process" showhandlers="true"/>
       <layout_item collapsed="false" xpath="/process/faultHandlers/catchAll" type="catchall"/>
       <layout_item collapsed="false" xpath="/process/faultHandlers/catchAll/sequence" type="sequence"/>
