@@ -16,6 +16,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import oracle.iam.identity.exception.NoSuchRoleException;
+import oracle.iam.identity.exception.RoleAlreadyExistsException;
+import oracle.iam.identity.exception.RoleCreateException;
+import oracle.iam.identity.exception.RoleModifyException;
+import oracle.iam.identity.exception.ValidationFailedException;
 import oracle.iam.identity.orgmgmt.api.OrganizationManager;
 import oracle.iam.identity.orgmgmt.api.OrganizationManagerConstants;
 import oracle.iam.identity.orgmgmt.vo.Organization;
@@ -58,6 +63,9 @@ public class OrgReconTask extends TaskSupport {
   // Organization UDFs
   private static final String UDFPIN = "pin";
   private static final String UDFGRPID = "grp_id";
+  
+  // Services
+  private final RoleManager roleMgr = Platform.getService(RoleManager.class);
 
   public void execute(HashMap hashMap) throws Exception {
     m_logger.entering(TAG, "execute", hashMap.toString());
@@ -248,15 +256,9 @@ public class OrgReconTask extends TaskSupport {
           break;
         }
         
-        // create role {{RoleName=MG},{RoleDesc=MGID}}
-        hmap = new HashMap<String,Object>();
-        hmap.put(RoleManagerConstants.RoleAttributeName.NAME.getId(), 
-                 rs.getString(MG));        
-        hmap.put(RoleManagerConstants.RoleAttributeName.DESCRIPTION.getId(), 
-                 rs.getString(MGID));
-        role = new Role(hmap);
-        rmResult = roleMgr.create(role);        
-        m_logger.fine("Role " + rs.getString(MG) + " created with id:" + rmResult.getEntityId());
+        // create role {{RoleName=MG},{RoleDesc=MGID}} 
+        // with membership rule
+        rmResult = createRoleWOrgName(rs.getString(MG), rs.getString(MGID));
       
         // entity to publish
         entPub = getEPubForRoleToOrg( rmResult.getEntityId(), strStatus );
@@ -353,14 +355,15 @@ public class OrgReconTask extends TaskSupport {
         } else if (lstRole.size() == 1) { 
           m_logger.finest("Role " + ROLENAMEPREFIX + rs.getString(MGID) + 
                           " exists");
+          strRoleKey = lstRole.get(0).getEntityId();
           
           String strDisplayName = rs.getString(MG) + " " + ROLENAMESUFFIX;
           // set bChangeName if role display name != proper one (transition case)
           bChangeName |= !strDisplayName.equals(lstRole.get(0).getDisplayName());
           
           if (bChangeName) {
-            role = new Role(lstRole.get(0).getEntityId());
-                        role.setDisplayName(rs.getString(MG) + " " + ROLENAMESUFFIX);
+            role = new Role(strRoleKey);
+            role.setDisplayName(rs.getString(MG) + " " + ROLENAMESUFFIX);
             rmResult = roleMgr.modify(role);
             
             assert !rmResult.getStatus().equalsIgnoreCase("COMPLETED");
@@ -370,20 +373,19 @@ public class OrgReconTask extends TaskSupport {
           
           // check if hierarchy is set
           boolean bSetHierarchy = 
-            !roleMgr.isRoleParent(strDefaultAdminRoleKey,
-                                lstRole.get(0).getEntityId(), true);
+            !roleMgr.isRoleParent(strDefaultAdminRoleKey, strRoleKey, true);
+          
           // set if required
           if (bSetHierarchy) {
             rmResult = roleMgr.addRoleRelationship(strDefaultAdminRoleKey, 
-                                        lstRole.get(0).getEntityId());
+                                        strRoleKey);
             assert !rmResult.getStatus().equalsIgnoreCase("COMPLETED");
             m_logger.finest("Hierarchy for role: " + 
                             ROLENAMEPREFIX + rs.getString(MGID) + " set");
           }
           
-          bPublish = !isRolePublishedToOrg( lstRole.get(0).getEntityId(), 
+          bPublish = !isRolePublishedToOrg( strRoleKey, 
                                             listOrgs.get(0).getEntityId() );
-          strRoleKey = lstRole.get(0).getEntityId();
         } else {
           m_logger.severe("More than one role found with a name: " + 
                           ROLENAMEPREFIX + rs.getString(MGID));
@@ -423,42 +425,26 @@ public class OrgReconTask extends TaskSupport {
         bPublish = false;
         strRoleKey = null;
         
-        // if role not found -> create it
+        // if role not found -> create it and set membership rule
         if( lstRole.size() == 0 ){
           m_logger.finest( "Role hasn't been found: " + rs.getString(MG) );
-          hmap = new HashMap<String,Object>();
-          hmap.put(RoleManagerConstants.RoleAttributeName.NAME.getId(), 
-                   rs.getString(MG));        
-          hmap.put(RoleManagerConstants.RoleAttributeName.DESCRIPTION.getId(), 
-                   rs.getString(MGID));
-          role = new Role(hmap);
-          rmResult = roleMgr.create(role);        
-          m_logger.fine("Role " + rs.getString(MG) + " created with id:" + 
-                        rmResult.getEntityId());        
+          rmResult = createRoleWOrgName(rs.getString(MG), rs.getString(MGID));
           
           // if role successfully created -> publish it to org
           bPublish = rmResult.getStatus().equalsIgnoreCase("COMPLETED");
           strRoleKey = rmResult.getEntityId();
           
-          // set membership rule
-          SearchRule rule = 
-            new SearchRule(UserManagerConstants.AttributeName.USER_ORGANIZATION.getId(), 
-                            listOrgs.get(0).getAttribute(OrganizationManagerConstants.AttributeName.ORG_NAME.getId()), 
-                            SearchRule.Operator.EQUAL);
-          rmResult = roleMgr.setUserMembershipRule(strRoleKey, rule);
-          
-          if( rmResult.getStatus().equalsIgnoreCase("COMPLETED"))
-            m_logger.finest("Membership rule created");
-          
           // role found -> change role name and/or description if required
+          // check for a membership rule also
         } else if( lstRole.size() == 1) {
           m_logger.finest("Role " + rs.getString(MG) + " exists");
+          strRoleKey = lstRole.get(0).getEntityId();
           
           // set role description if it's not equal(empty) to MGID
           boolean bSetDescription = !rs.getString(MGID).equals(lstRole.get(0).getDescription());
           
           if (bChangeName || bSetDescription) {
-            role = new Role(lstRole.get(0).getEntityId());
+            role = new Role(strRoleKey);
             
             if (bChangeName) {
               role.setName(rs.getString(MG));
@@ -469,13 +455,24 @@ public class OrgReconTask extends TaskSupport {
             }
             
             rmResult = roleMgr.modify(role);
-            assert !rmResult.getStatus().equalsIgnoreCase("COMPLETED");
-            m_logger.finest("Role " + rs.getString(MG) + " modified");
+            if (rmResult.getStatus().equalsIgnoreCase("COMPLETED")) {
+              m_logger.finest("Role " + rs.getString(MG) + " modified");
+            } else {
+              m_logger.warning("Can't modify role " + rs.getString(MG));
+            }
+            
+            // check membership rule and set if required
+            SearchRule rule = 
+              roleMgr.getUserMembershipRule(strRoleKey);
+            
+            if (rule == null) {
+              rmResult = setMembershipRule(strRoleKey, 
+                                           rs.getString(MG));
+            }
           }
           
-          bPublish = !isRolePublishedToOrg( lstRole.get(0).getEntityId(), 
+          bPublish = !isRolePublishedToOrg( strRoleKey, 
                                             listOrgs.get(0).getEntityId() );
-          strRoleKey = lstRole.get(0).getEntityId();
         } else {
           m_logger.severe("More than one role found with a name: " + 
                           rs.getString(MG));
@@ -564,4 +561,70 @@ public class OrgReconTask extends TaskSupport {
     return res;
   }
 
+  /** Helper method to create a role with an organization name and set its 
+   * description to MG id
+   * @param strMG Management Group name
+   * @param strMGID Management Group id
+   * @return RoleManagerResult
+   * @throws ValidationFailedException
+   * @throws RoleAlreadyExistsException
+   * @throws RoleCreateException
+   * @throws RoleModifyException
+   * @throws NoSuchRoleException
+   */
+  private RoleManagerResult createRoleWOrgName(String strMG, String strMGID) throws ValidationFailedException,
+                                                                      RoleAlreadyExistsException,
+                                                                      RoleCreateException,
+                                                                      RoleModifyException,
+                                                                      NoSuchRoleException {
+    m_logger.entering(TAG, "createRoleWOrgName", strMG + " " + strMGID);
+    
+    // set Name to MG, Description to MGID
+    HashMap<String,Object> hmap = new HashMap<String,Object>();
+    hmap.put(RoleManagerConstants.RoleAttributeName.NAME.getId(), strMG);        
+    hmap.put(RoleManagerConstants.RoleAttributeName.DESCRIPTION.getId(), strMGID);
+    Role role = new Role(hmap);
+    RoleManagerResult rmResult = roleMgr.create(role);
+
+    if (rmResult.getStatus().equalsIgnoreCase("COMPLETED")) {
+      m_logger.fine("Role " + strMG + " created");
+    } else {
+      m_logger.warning("Can't create role " + strMG);
+    }
+    
+    // set membership rule
+    rmResult = setMembershipRule(rmResult.getEntityId(), strMG);
+    
+    m_logger.exiting(TAG, "createRoleWOrgName", rmResult.toString());
+    return rmResult;
+  }
+
+  /** Sets a membership rule for a role to User.organization = Organization name
+   * @param strRoleKey Key for a role to set rule for
+   * @param strOrgName Organization name
+   * @return RoleManagerResult of the operation
+   * @throws ValidationFailedException
+   * @throws RoleModifyException
+   * @throws NoSuchRoleException
+   */
+  private RoleManagerResult setMembershipRule(String strRoleKey, 
+                                              String strOrgName) throws ValidationFailedException,
+                                                      RoleModifyException,
+                                                      NoSuchRoleException {
+    m_logger.entering(TAG, "setMembershipRule", strRoleKey + " " + strOrgName);
+    
+    SearchRule rule = 
+      new SearchRule(UserManagerConstants.AttributeName.USER_ORGANIZATION.getId(), 
+                      strOrgName, SearchRule.Operator.EQUAL);
+    RoleManagerResult rmResult = roleMgr.setUserMembershipRule(strRoleKey, rule);
+
+    if (rmResult.getStatus().equalsIgnoreCase("COMPLETED")) {
+      m_logger.fine("Membership rule for role " + strOrgName + " has been set");
+    } else {
+      m_logger.warning("Can't set a membership rule for role " + strOrgName);
+    }
+    
+    m_logger.exiting(TAG, "setMembershipRule", rmResult.toString());
+    return rmResult;
+  }
 }
