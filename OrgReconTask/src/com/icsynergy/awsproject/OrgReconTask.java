@@ -38,7 +38,7 @@ import oracle.iam.platformservice.api.EntityPublicationService;
 import oracle.iam.scheduler.vo.TaskSupport;
 
 public class OrgReconTask extends TaskSupport {
-  private static final String TAG = "OrgReconTask";
+  private static final String TAG = "OrgReconTask 0.9.5";
   private final static Logger m_logger = Logger.getLogger("com.icsynergy");
   
   // task parameter names
@@ -459,17 +459,19 @@ public class OrgReconTask extends TaskSupport {
               m_logger.finest("Role " + rs.getString(MG) + " modified");
             } else {
               m_logger.warning("Can't modify role " + rs.getString(MG));
-            }
-            
-            // check membership rule and set if required
-            SearchRule rule = 
-              roleMgr.getUserMembershipRule(strRoleKey);
-            
-            if (rule == null) {
-              rmResult = setMembershipRule(strRoleKey, 
-                                           rs.getString(MG));
-            }
+            }            
           }
+          
+          m_logger.finest("Checking role's membership rule...");
+          // check membership rule and set if required
+          SearchRule rule = 
+            roleMgr.getUserMembershipRule(strRoleKey);
+          
+          if (rule == null) {
+            rmResult = setMembershipRule(strRoleKey, 
+                                         rs.getString(MG));
+          }
+
           
           bPublish = !isRolePublishedToOrg( strRoleKey, 
                                             listOrgs.get(0).getEntityId() );
