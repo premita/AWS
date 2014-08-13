@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<oimplugins>
+ <plugins pluginpoint="oracle.iam.platform.kernel.spi.EventHandler">
+  <plugin pluginclass="com.icsynergy.processplugins.CreateUserSetOrganizationPreProcessHandler"
+          version="1.2" name="CreateUserSetOrganizationPreProcessHandler"/>
+  <plugin pluginclass="com.icsynergy.processplugins.RoleUserUDFSetter"
+          version="1.1" name="RoleUserUDFSetter"/>
+  <plugin pluginclass="com.icsynergy.processplugins.RoleUserUDFRemover"
+          version="1.1" name="RoleUserUDFRemover"/>
+ </plugins>
+</oimplugins>

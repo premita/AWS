@@ -1,5 +1,8 @@
 <?xml version = '1.0' encoding = 'UTF-8'?>
 <jws:workspace xmlns:jws="http://xmlns.oracle.com/ide/project">
+   <hash n="adrs-workspace-properties">
+      <value n="adrs-instance-binding" v="DefaultServer"/>
+   </hash>
    <value n="application-package-prefix" v="com.icsynergy.awsproject"/>
    <value n="appTemplateId" v="javaAppTemplate"/>
    <hash n="component-versions">
@@ -15,5 +18,6 @@
    </hash>
    <list n="listOfChildren">
       <hash><url n="URL" path="OrgReconTask/OrgReconTask.jpr"/></hash>
+      <hash><url n="URL" path="plugins/plugins.jpr"/></hash>
    </list>
 </jws:workspace>

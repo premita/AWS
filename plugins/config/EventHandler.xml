@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<eventhandlers xsi:schemaLocation="http://www.oracle.com/schema/oim/platform/kernel orchestration-handlers.xsd"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xmlns="http://www.oracle.com/schema/oim/platform/kernel">
+ <action-handler sync="TRUE" order="1001"
+                 name="CreateUserSetOrganizationPreProcessHandler"
+                 operation="CREATE" entity-type="User"
+                 class="com.icsynergy.processplugins.CreateUserSetOrganizationPreProcessHandler"
+                 stage="preprocess"/>
+ <action-handler sync="TRUE" order="1030" name="RoleUserUDFSetter"
+                 operation="CREATE" entity-type="RoleUser"
+                 class="com.icsynergy.processplugins.RoleUserUDFSetter"
+                 stage="postprocess"/>
+<action-handler sync="TRUE" order="1030" name="RoleUserUDFRemover"
+                 operation="DELETE" entity-type="RoleUser"
+                 class="com.icsynergy.processplugins.RoleUserUDFRemover"
+                 stage="postprocess"/>
+</eventhandlers>
