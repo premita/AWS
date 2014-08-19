@@ -11,8 +11,16 @@
                  operation="CREATE" entity-type="RoleUser"
                  class="com.icsynergy.processplugins.RoleUserUDFSetter"
                  stage="postprocess"/>
-<action-handler sync="TRUE" order="1030" name="RoleUserUDFRemover"
+ <action-handler sync="TRUE" order="1030" name="RoleUserUDFRemover"
                  operation="DELETE" entity-type="RoleUser"
                  class="com.icsynergy.processplugins.RoleUserUDFRemover"
+                 stage="postprocess"/>
+ <action-handler sync="TRUE" order="1001" name="NotifyUserIdToUser"
+                 operation="CREATE" entity-type="User"
+                 class="com.icsynergy.processplugins.NotifyUserIdToUser"
+                 stage="postprocess"/>
+ <action-handler sync="TRUE" order="1002" name="NotifyUserPasswordChanged"
+                 operation="CHANGE_PASSWORD" entity-type="User"
+                 class="com.icsynergy.processplugins.NotifyUserPasswordChanged"
                  stage="postprocess"/>
 </eventhandlers>

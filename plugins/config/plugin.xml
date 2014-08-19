@@ -7,5 +7,12 @@
           version="1.1" name="RoleUserUDFSetter"/>
   <plugin pluginclass="com.icsynergy.processplugins.RoleUserUDFRemover"
           version="1.1" name="RoleUserUDFRemover"/>
+  <plugin pluginclass="com.icsynergy.processplugins.NotifyUserIdToUser"
+          version="1.0" name="NotifyUserIdToUser"/>
+  <plugin pluginclass="com.icsynergy.processplugins.NotifyUserPasswordChanged"
+          version="1.0" name="NotifyUserPasswordChanged"/>
  </plugins>
+ 	<plugins pluginpoint="oracle.iam.notification.impl.NotificationEventResolver">
+		<plugin pluginclass="com.icsynergy.notification.AttUserEmailResolver" version="1.0" name="AttUserEmailResolver"/>
+	</plugins>
 </oimplugins>
