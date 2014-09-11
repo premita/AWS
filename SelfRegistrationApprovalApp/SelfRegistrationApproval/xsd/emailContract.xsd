@@ -32,6 +32,9 @@
           </xsd:complexType>
         </xsd:element>
         <xsd:element name="BaseWebsiteUrl" type="xsd:string"/>
+        <xsd:element name="LogoUrl" type="xsd:string"/>
+        <xsd:element name="AdminEmail" type="xsd:string"/>
+        <xsd:element name="Year" type="xsd:string"/>
       </xsd:sequence>
     </xsd:complexType>
   </xsd:element>

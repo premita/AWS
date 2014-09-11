@@ -8,11 +8,11 @@
     <head>
     </head>
     <body>
-        <img src="http://owg-aus-q100.corp.wayport.net:8870/images/ATT_Wi-Fi_Solutions.png" alt="AT&amp;T"></img>
+        <img><xsl:attribute name="src"><xsl:value-of select="att:LogoUrl"/> </xsl:attribute><xsl:attribute name="alt">AT&amp;T</xsl:attribute></img>
     <div style="line-height:17px;">
      <font style="font-family: Calibri,Verdana, Arial, Helvetica, sans-serif;font-size: 11px">
     <p><xsl:value-of select="concat(att:Recipient/att:FirstName, ' ', att:Recipient/att:LastName,',')"/></p>
-    <p>This message is to notify you that a request has been received to create a Central Command account for the user below. 
+    <p>This message is to notify you that a request has been received to create a an AT&amp;T Wi-Fi Solutions account for the user below. 
     You can track the status of this request by clicking on the Request ID.</p>
     <table style="font-family: Calibri,Verdana, Arial, Helvetica, sans-serif;font-size: 11px">
     <tr>
@@ -29,11 +29,13 @@
     </tr>
     
     </table>
-    <p>For any issues, please contact your designated Administrator at <a href="mailto:registration-distro@att.com">registration-distro@att.com</a>.</p>
+    <p>For any issues, please contact your designated Administrator at 
+        <a><xsl:attribute name="href"><xsl:value-of select="concat('mailto:', att:AdminEmail)"/></xsl:attribute><xsl:value-of select="att:AdminEmail"/></a>.
+    </p>
     
     <p>
 	Your AT&amp;T Wi-Fi Solutions Team<br/>
-	<center><xsl:text disable-output-escaping="yes">&amp;#169;</xsl:text> 2014 AT&amp;T Intellectual Property.  All rights reserved.  AT&amp;T, the AT&amp;T logo and all other AT&amp;T marks contained herein are trademarks of AT&amp;T Intellectual Property and/or AT&amp;T affiliated companies.</center><br/>
+	<center><xsl:text disable-output-escaping="yes">&amp;#169;</xsl:text> <xsl:value-of select="att:Year"/> AT&amp;T Intellectual Property.  All rights reserved.  AT&amp;T, the AT&amp;T logo and all other AT&amp;T marks contained herein are trademarks of AT&amp;T Intellectual Property and/or AT&amp;T affiliated companies.</center><br/>
         <center><font style="color:#c4bc96;font-size:90%">Please do not reply to this message; this mailbox is not monitored.</font></center>
     </p>
     </font>

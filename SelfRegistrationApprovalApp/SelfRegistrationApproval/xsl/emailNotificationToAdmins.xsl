@@ -8,11 +8,11 @@
     <head>
     </head>
     <body>
-    <img src="http://owg-aus-q100.corp.wayport.net:8870/images/ATT_Wi-Fi_Solutions.png" alt="AT&amp;T"></img>
+    <img><xsl:attribute name="src"><xsl:value-of select="att:LogoUrl"/> </xsl:attribute><xsl:attribute name="alt">AT&amp;T</xsl:attribute></img>
     <div style="line-height:17px;">
      <font style="font-family: Calibri,Verdana, Arial, Helvetica, sans-serif;font-size: 11px">
     <p>Administrator of <xsl:value-of select="concat(normalize-space(att:Organization/att:Name),',')"/></p>
-    <p>This message is to notify you that AT&amp;T Wi-Fi Solutions received a request to create a Central Command account with access to <xsl:value-of select="att:Organization/att:Name"/>'s Information.
+    <p>This message is to notify you that AT&amp;T Wi-Fi Solutions received a request to create an AT&amp;T Wi-Fi Solutions account with access to <xsl:value-of select="att:Organization/att:Name"/>'s Information.
     </p>
     <p>Please view the request and approve if the user is allowed to have access to <xsl:value-of select="att:Organization/att:Name"/>'s data.
     Otherwise, please disapprove the request. Click here to review the account request:
@@ -37,7 +37,7 @@
     </p>
     <p>
 	Your AT&amp;T Wi-Fi Solutions Team<br/>
-	<center><xsl:text disable-output-escaping="yes">&amp;#169;</xsl:text> 2014 AT&amp;T Intellectual Property.  All rights reserved.  AT&amp;T, the AT&amp;T logo and all other AT&amp;T marks contained herein are trademarks of AT&amp;T Intellectual Property and/or AT&amp;T affiliated companies.</center><br/>
+	<center><xsl:text disable-output-escaping="yes">&amp;#169;</xsl:text> <xsl:value-of select="att:Year"/> AT&amp;T Intellectual Property.  All rights reserved.  AT&amp;T, the AT&amp;T logo and all other AT&amp;T marks contained herein are trademarks of AT&amp;T Intellectual Property and/or AT&amp;T affiliated companies.</center><br/>
         <center><font style="color:#c4bc96;font-size:90%">Please do not reply to this message; this mailbox is not monitored.</font></center>
     </p>
     </font>

@@ -11,11 +11,13 @@
     <font style="font-family: Calibri,Verdana, Arial, Helvetica, sans-serif;font-size: 11px">
     <p><xsl:value-of select="concat(att:Recipient/att:FirstName, ' ', att:Recipient/att:LastName,',')"/></p>
    
-    <p>Your request for a Central Command account has been approved:</p>
+    <p>Your request for an AT&amp;T Wi-Fi Solutions account has been approved:</p>
     <p>Your User Name is <strong><xsl:value-of select="att:Recipient/att:UserLogin"/></strong>.</p>
    
     
-    <p>For any issues, please contact your designated Administrator at <a href="mailto:registration-distro@att.com">registration-distro@att.com</a>.</p>
+    <p>For any issues, please contact your designated Administrator at 
+    <a href="mailto:AWSWSPDEV_Account_Support@attwifi.com">AWSWSPDEV_Account_Support@wattwifi.com</a>
+    .</p>
     
     <p>Your AT&amp;T Wi-Fi Solutions Team<br/>
     <font style="color:#c4bc96;font-size:90%">Please do not reply to this message; this mailbox is not monitored.</font><br/>

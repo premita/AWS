@@ -10,6 +10,7 @@
 -->
 <process name="ApprovalProcess"
          targetNamespace="http://xmlns.oracle.com/ApprovalApp_jws/SelfRegistrationApproval/ApprovalProcess"
+         xmlns:oraext="http://www.oracle.com/XSL/Transform/java/oracle.tip.pc.services.functions.ExtFunc"
          xmlns="http://schemas.xmlsoap.org/ws/2003/03/business-process/"
          xmlns:client="http://xmlns.oracle.com/ApprovalApp_jws/SelfRegistrationApproval/ApprovalProcess"
          xmlns:ora="http://schemas.oracle.com/xpath/extension"
@@ -193,7 +194,7 @@ catch ( Exception e) {
                 <to variable="oimurl"/>
             </copy>
             <copy>
-                <from expression="string('http://iam-aus-e003.corp.wayport.net:14000')"/>
+                <from expression="ora:getPreference('useroimurlbase')"/>
                 <to variable="BaseWebsiteUrl"/>
             </copy>
         </assign>
@@ -537,6 +538,21 @@ if ( org_pin != "" ) {
                             query="/ns18:EmailContract/ns18:RequestID"/>
                     </copy>
                     <copy>
+                        <from expression="ora:getPreference('emaillogo')"/>
+                        <to variable="EmailInfo"
+                            query="/ns18:EmailContract/ns18:LogoUrl"/>
+                    </copy>
+                    <copy>
+                        <from expression="ora:getPreference('adminemail')"/>
+                        <to variable="EmailInfo"
+                            query="/ns18:EmailContract/ns18:AdminEmail"/>
+                    </copy>
+                    <copy>
+                        <from expression="ora:getPreference('copyrightyear')"/>
+                        <to variable="EmailInfo"
+                            query="/ns18:EmailContract/ns18:Year"/>
+                    </copy>
+                    <copy>
                         <from variable="BaseWebsiteUrl"/>
                         <to variable="EmailInfo"
                             query="/ns18:EmailContract/ns18:BaseWebsiteUrl"/>
@@ -651,7 +667,7 @@ catch ( Exception e) {
                                     query="/EmailPayload/ns16:ReplyToAddress"/>
                             </copy>
                             <copy>
-                                <from expression="string('ACTION REQUIRED: AT&amp;T Wi-Fi Solutions Account Request Receipt')"/>
+                                <from expression="oraext:format-string('ACTION REQUIRED: AT&amp;T Wi-Fi Solutions Account Request {0} Receipt {1}', bpws:getVariableData('inputVariable','payload','/ns3:process/ns4:RequestID'), ora:getPreference('emailsubjectsuffix'))"/>
                                 <to variable="varNotificationReq"
                                     part="EmailPayload"
                                     query="/EmailPayload/ns16:Subject"/>
@@ -806,7 +822,7 @@ catch ( Exception e) {
                                             query="/EmailPayload/ns16:ReplyToAddress"/>
                                     </copy>
                                     <copy>
-                                        <from expression="string('ACTION REQUIRED: AT&amp;T Wi-Fi Solutions Account Request Review')"/>
+                                        <from expression="oraext:format-string('ACTION REQUIRED: AT&amp;T Wi-Fi Solutions Account Request {0} Receipt {1}', bpws:getVariableData('inputVariable','payload','/ns3:process/ns4:RequestID'), ora:getPreference('emailsubjectsuffix'))"/>
                                         <to variable="varNotificationReq"
                                             part="EmailPayload"
                                             query="/EmailPayload/ns16:Subject"/>
