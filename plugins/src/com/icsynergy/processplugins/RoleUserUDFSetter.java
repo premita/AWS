@@ -87,44 +87,18 @@ public class RoleUserUDFSetter implements PostProcessHandler {
       return new EventResult();
     }
   
-/*    
-    //get system administrator's credentials            
-    try {
-      String strOimUserName = null;
-      char[] archOimPassword = null;
-
-      JpsContext ctx = JpsContextFactory.getContextFactory().getContext();
-      CredentialStore cs = ctx.getServiceInstance(CredentialStore.class);
-      
-      CredentialMap cmap = cs.getCredentialMap("oim");
-    
-      Credential cred = cmap.getCredential("sysadmin");
-      
-      if (cred instanceof PasswordCredential) {
-        PasswordCredential pcred = (PasswordCredential) cred;
-        archOimPassword = pcred.getPassword();
-        strOimUserName = pcred.getName();
-      } else {
-        throw new Exception("Credentials are not of PasswordCredential.class");
-      }
-      
-      oimClient.login(strOimUserName, archOimPassword);
-      logger.finest("Logged in");
-    } catch (Exception e) {
-      logger.log(Level.SEVERE, "Can't get credentials to log in", e);
-      return new EventResult();
-    }
-*/    
     UserManager usrMgr = oimClient.getService(UserManager.class);    
     RoleManager roleMgr = oimClient.getService(RoleManager.class);
 
     // get user's current GrpIDs and GrpName to modify them
     Set<String> setAttr = new HashSet<String>();
-    setAttr.add("AWSMgtGrpName");
-    setAttr.add("AWSMgmtGrpIDs");
     
     // for each user in case it's a bulk assignment
     for (String strUserKey : lstUsrKeys) {
+      setAttr.clear();
+      setAttr.add("AWSMgtGrpName");
+      setAttr.add("AWSMgmtGrpIDs");
+      
       User usr;
       try {
         usr = usrMgr.getDetails(strUserKey, setAttr, false);
@@ -182,7 +156,6 @@ public class RoleUserUDFSetter implements PostProcessHandler {
           strGrpIDs = strRoleDesc;
         }
       }
-      
       
       logger.finest("Setting new attribute values to: " + strGrpName + 
                     " and " + strGrpIDs);      

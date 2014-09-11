@@ -2,6 +2,7 @@ package com.icsynergy.processplugins;
 
 import java.io.Serializable;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
@@ -36,107 +37,133 @@ public class RoleUserUDFRemover implements PostProcessHandler {
     Map<String,Serializable> map = orchestration.getParameters();
     logger.finest("Orch params: " + map.toString());
     List<String> lstUsrKeys = (List<String>) map.get("userKeys");
-    String strRoleKey = map.get("roleKey").toString();
-
-    logger.finest("Role Key: " + strRoleKey);
-    logger.finest("User Keys: " + lstUsrKeys.toString());
-
-    // get role name which is equal to org name 
-    RoleManager roleMgr = Platform.getService(RoleManager.class);
-    Set<String> setAttr = new HashSet<String>();
-    setAttr.add(RoleManagerConstants.RoleAttributeName.NAME.getId());
-    setAttr.add(RoleManagerConstants.RoleAttributeName.DESCRIPTION.getId());
     
-    Role role;
-    try {
-      role = roleMgr.getDetails(strRoleKey, setAttr);
-    } catch (Exception e) {
-      logger.log(Level.SEVERE, 
-                 "Can't get role details for role key: " + strRoleKey, e);
-      return new EventResult();
+    List<String> arstrRoleKeys = null;
+    if (map.containsKey("roleKey")) {
+      String strRoleKey = map.get("roleKey").toString();
+      arstrRoleKeys = new ArrayList<String>();
+      arstrRoleKeys.add(strRoleKey);
+    } 
+    else if (map.containsKey("roleKeys")) {
+      arstrRoleKeys = (List<String>) map.get("roleKeys");
     }
 
-    String strRoleName = role.getName();
-    String strRoleDesc = role.getDescription();
-    logger.finest("Role name: " + strRoleName + " Description: " + strRoleDesc);
+    logger.finest("Role Key: " + arstrRoleKeys.toString());
+    logger.finest("User Keys: " + lstUsrKeys.toString());
 
-    // get user's current GrpIDs and GrpName to modify them
+    RoleManager roleMgr = Platform.getService(RoleManager.class);
     UserManager usrMgr = 
       Platform.getServiceForEventHandlers(UserManager.class,
                                           ContextManager.getContextKey().toString(),
                                           ContextManager.getContextType().toString(),
                                           ContextManager.getContextSubType().toString(),
                                           ContextManager.getAllValuesFromCurrentContext());
-    setAttr.clear();
-    setAttr.add("AWSMgtGrpName");
-    setAttr.add("AWSMgmtGrpIDs");
     
-    // for each user in case it's a bulk assignment
+    Set<String> setAttr = new HashSet<String>();
+    // for each user
     for (String strUserKey : lstUsrKeys) {
+      // get user's current GrpIDs and GrpName to modify them  
+      setAttr.clear();
+      setAttr.add("AWSMgtGrpName");
+      setAttr.add("AWSMgmtGrpIDs");
+      
       User usr;
       try {
         usr = usrMgr.getDetails(strUserKey, setAttr, false);
       } catch (Exception e) {
         logger.log(Level.SEVERE, "Can't get details for a user with key: " +
                                  strUserKey, e);
-        return new EventResult();
+        logger.warning("Skipping user with key: " + strUserKey);
+        continue;
       }
-      
-      // add new GrpID and GrpName to existing values
-      // or just set them if they are null
+
       String strGrpName = null, strGrpIDs = null;
+      String[] arstrGrpNames = new String[0], arstrGrpIDs = new String[0];
       
       if (usr.getAttribute("AWSMgtGrpName") != null) {
-        strGrpName = usr.getAttribute("AWSMgtGrpName").toString();
-        //split the string into an array
-        String[] arstrGrpNames = strGrpName.split("[,:]");
-        
-        String[] arstrNewGrpNames = null;
-        //search array for a string and remove it from it
-        for (int i = 0; i < arstrGrpNames.length; i++) {
-          if (arstrGrpNames[i].equalsIgnoreCase(strRoleName)) {
-            arstrGrpNames[i] = arstrGrpNames[arstrGrpNames.length - 1];
-            arstrNewGrpNames = Arrays.copyOf(arstrGrpNames, arstrGrpNames.length - 1);
-            break;
-          }
-        }
-        if (arstrNewGrpNames != null) {
-          strGrpName = Arrays.toString(arstrNewGrpNames).replace(", ", ",")
-            .replaceAll("[\\[\\]]", "");
-        } else {
-          logger.warning("GrpName " + strRoleName + " has not been found");
-          strGrpName = Arrays.toString(arstrGrpNames).replace(", ", ",")
-            .replaceAll("[\\[\\]]", "");          
-        }
-      } else {
-        logger.warning("User AWSMgtGrpName attribute is empty");
+        //split the string into an array of GrpNames
+        arstrGrpNames = 
+          usr.getAttribute("AWSMgtGrpName").toString().split("[,:]");
+      }
+
+      if (usr.getAttribute("AWSMgmtGrpIDs") != null) {
+        //split the string into an array of GrpIDs
+        arstrGrpIDs = 
+          usr.getAttribute("AWSMgmtGrpIDs").toString().split("[,:]");
       }
       
-      if (usr.getAttribute("AWSMgmtGrpIDs") != null) {
-        strGrpIDs = usr.getAttribute("AWSMgmtGrpIDs").toString();
-        //split the string into an array
-        String[] arstrGrpIDs = strGrpIDs.split("[,:]");
+      // get role name which is equal to org name and org desc
+      setAttr.clear();
+      setAttr.add(RoleManagerConstants.RoleAttributeName.NAME.getId());
+      setAttr.add(RoleManagerConstants.RoleAttributeName.DESCRIPTION.getId());
+      
+      // for each role
+      for (String strRoleKey : arstrRoleKeys) {
+        Role role;
+        try {
+          role = roleMgr.getDetails(strRoleKey, setAttr);
+        } catch (Exception e) {
+          logger.log(Level.SEVERE, 
+                     "Can't get role details for role key: " + strRoleKey, e);
+          logger.warning("Skipping role with key: " + strRoleKey);
+          continue;
+        }
+  
+        String strRoleName = role.getName();
+        String strRoleDesc = role.getDescription();
+        logger.finest("Role name: " + strRoleName + " Description: " + strRoleDesc);
         
-        String[] arstrNewGrpIDs = null;
-        //search array for a string and remove it from it
-        for (int i = 0; i < arstrGrpIDs.length; i++) {
-          if (arstrGrpIDs[i].equalsIgnoreCase(strRoleDesc)) {
-            arstrGrpIDs[i] = arstrGrpIDs[arstrGrpIDs.length - 1];
-            arstrNewGrpIDs = Arrays.copyOf(arstrGrpIDs, arstrGrpIDs.length - 1);
-            break;
+        // skip aws_delegated_admin_xxx roles
+        if (strRoleName.indexOf("aws_delegated_admin") == 0) {
+          logger.finest("The role to remove is aws_delegated_admin_xxx one. Skipping");
+          continue;
+        }
+        
+        // clean GrpName from array of GrpNames
+        if (arstrGrpNames.length > 0) {
+          //search array for a string and remove it from it
+          for (int i = 0; i < arstrGrpNames.length; i++) {
+            if (arstrGrpNames[i].equalsIgnoreCase(strRoleName)) {
+              arstrGrpNames[i] = arstrGrpNames[arstrGrpNames.length - 1];
+              arstrGrpNames = Arrays.copyOf(arstrGrpNames, arstrGrpNames.length - 1);
+              break;
+            }
           }
-        }
-        
-        if (arstrNewGrpIDs != null) {
-          strGrpIDs = Arrays.toString(arstrNewGrpIDs).replace(", ", ",")
-            .replaceAll("[\\[\\]]", "");
         } else {
-          logger.warning("GrpID " + strRoleDesc + " has not been found");
-          strGrpIDs = Arrays.toString(arstrGrpIDs).replace(", ", ",")
-            .replaceAll("[\\[\\]]", "");
+          logger.warning("User's AWSMgtGrpName attribute is already empty. " + 
+                         "Can't delete GrpName: " + strRoleName);
         }
+
+        // clean GrpID from array of GrpIDs        
+        if (arstrGrpIDs.length > 0) {
+          //search array for a string and remove it from it
+          for (int i = 0; i < arstrGrpIDs.length; i++) {
+            if (arstrGrpIDs[i].equalsIgnoreCase(strRoleDesc)) {
+              arstrGrpIDs[i] = arstrGrpIDs[arstrGrpIDs.length - 1];
+              arstrGrpIDs = Arrays.copyOf(arstrGrpIDs, arstrGrpIDs.length - 1);
+              break;
+            }
+          }          
+        } else {
+          logger.warning("User's AWSMgmtGrpIDs attribute is already empty. " +
+                         "Can't delete GrpID:" + strRoleDesc);
+        }  
+      }
+      
+      if (arstrGrpNames.length > 0) {
+        strGrpName = Arrays.toString(arstrGrpNames).replace(", ", ",")
+          .replaceAll("[\\[\\]]", "");
       } else {
-        logger.warning("User AWSMgmtGrpIDs attribute is empty");
+        logger.warning("New GrpName is empty");
+        strGrpName = null;          
+      }
+
+      if (arstrGrpIDs.length > 0) {
+        strGrpIDs = Arrays.toString(arstrGrpIDs).replace(", ", ",")
+          .replaceAll("[\\[\\]]", "");
+      } else {
+        logger.warning("New GrpID is empty");
+        strGrpIDs = null;
       }
 
       logger.finest("Setting new attribute values to: " + strGrpName + 
@@ -147,12 +174,14 @@ public class RoleUserUDFRemover implements PostProcessHandler {
 
       try {
         usrMgr.modify(usr);
+        logger.finest("User's UDF have been successfully set");
       } catch (Exception e) {
         logger.log(Level.SEVERE, "Can't modify a user", e);
-        return new EventResult();
+        logger.warning("Skipping user with key: " + strUserKey);
+        continue;
       }
-
     }
+    
     logger.exiting(TAG, "execute");
     return new EventResult();
   }
