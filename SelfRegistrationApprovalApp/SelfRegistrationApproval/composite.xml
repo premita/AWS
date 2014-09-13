@@ -56,6 +56,9 @@
   <component name="ApprovalTask">
     <implementation.workflow src="ApprovalTask.task"/>
   </component>
+  <component name="ChallengeTask">
+    <implementation.workflow src="ChallengeTask.task"/>
+  </component>
   <reference name="CallbackService_2"
              ui:wsdlLocation="CallbackServiceDefinitions.wsdl">
     <interface.wsdl interface="http://wls.ws.workflowservice.platform.iam.oracle/#wsdl.interface(CallbackService)"/>

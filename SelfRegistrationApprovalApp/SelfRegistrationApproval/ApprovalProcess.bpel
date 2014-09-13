@@ -42,7 +42,6 @@
          xmlns:ns17="http://xmlns.oracle.com/pcbpel/adapter/file/SelfRegistrationApprovalApp/SelfRegistrationApproval/debugfile"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xmlns:ns18="http://att.com">
-    <bpelx:exec import="oracle.security.jps.*"/>
     <!-- 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         PARTNERLINKS                                                      
@@ -667,7 +666,7 @@ catch ( Exception e) {
                                     query="/EmailPayload/ns16:ReplyToAddress"/>
                             </copy>
                             <copy>
-                                <from expression="oraext:format-string('ACTION REQUIRED: AT&amp;T Wi-Fi Solutions Account Request {0} Receipt {1}', bpws:getVariableData('inputVariable','payload','/ns3:process/ns4:RequestID'), ora:getPreference('emailsubjectsuffix'))"/>
+                                <from expression="concat('ACTION REQUIRED: AT&amp;T Wi-Fi Solutions Account Request ', string(bpws:getVariableData('inputVariable','payload','/ns3:process/ns4:RequestID')), ' Receipt ', ora:getPreference('emailsubjectsuffix'))"/>
                                 <to variable="varNotificationReq"
                                     part="EmailPayload"
                                     query="/EmailPayload/ns16:Subject"/>
@@ -822,13 +821,13 @@ catch ( Exception e) {
                                             query="/EmailPayload/ns16:ReplyToAddress"/>
                                     </copy>
                                     <copy>
-                                        <from expression="oraext:format-string('ACTION REQUIRED: AT&amp;T Wi-Fi Solutions Account Request {0} Receipt {1}', bpws:getVariableData('inputVariable','payload','/ns3:process/ns4:RequestID'), ora:getPreference('emailsubjectsuffix'))"/>
+                                        <from expression="oraext:format-string('ACTION REQUIRED: AT&amp;T Wi-Fi Solutions Account Request {0} Receipt {1}', string(bpws:getVariableData('inputVariable','payload','/ns3:process/ns4:RequestID')), ora:getPreference('emailsubjectsuffix'))"/>
                                         <to variable="varNotificationReq"
                                             part="EmailPayload"
                                             query="/EmailPayload/ns16:Subject"/>
                                     </copy>
                                     <copy>
-                                        <from expression="concat(string('&quot;'), bpws:getVariableData('adminName'), string('&quot;&lt;'), bpws:getVariableData('adminEmail'), string('&gt;'))"/>
+                                        <from expression="concat(string('&quot;'), bpws:getVariableData('adminName'), string('&quot;&lt;'), bpws:getVariableData('adminEmail'), string('>'))"/>
                                         <to variable="varNotificationReq"
                                             part="EmailPayload"
                                             query="/EmailPayload/ns16:To"/>

@@ -14,7 +14,7 @@ xmlns:task="http://xmlns.oracle.com/bpel/workflow/task" xmlns:xsd="http://www.w3
                 xmlns:xref="http://www.oracle.com/XSL/Transform/java/oracle.tip.xref.xpath.XRefXPathFunctions">
    <name>ApprovalTask</name>
    <id>${domain_id}_${process_id}_${process_revision}_ApprovalTask</id>
-   <title type="XPATH"><value>oraext:format-string('AT&amp;T Wi-Fi Solutions Account Request {0} Review', ora:addQuotes(/task:task/task:payload/task:RequestID))</value></title>
+   <title type="XPATH"><value>concat(string('AT&amp;T Wi-Fi Solutions Account Request '), /task:task/task:payload/task:RequestID)</value></title>
    <priority>3</priority>
    <process processId="" processVersion=""/>
    <routingSlip xmlns="http://xmlns.oracle.com/bpel/workflow/routingSlip">
