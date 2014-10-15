@@ -1,5 +1,7 @@
 package com.icsynergy.processplugins;
 
+import com.icsynergy.helpers.csf.CsfAccessor;
+
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -27,13 +29,14 @@ import oracle.iam.platform.kernel.vo.BulkOrchestration;
 import oracle.iam.platform.kernel.vo.EventResult;
 import oracle.iam.platform.kernel.vo.Orchestration;
 
+import oracle.security.jps.service.credstore.Credential;
+import oracle.security.jps.service.credstore.PasswordCredential;
+
 
 public class RoleUserUDFSetter implements PostProcessHandler {
   private final static Logger logger = Logger.getLogger("com.icsynergy");
   private final static String TAG = RoleUserUDFSetter.class.getCanonicalName();
   
-  private final static String USERNAMESYSPROP = "AWS.Username";
-  private final static String PWDSYSPROP = "AWS.Password";
   private final static String OIMURL = "AWS.OIMURL";
   
   public EventResult execute(long l, long l2, Orchestration orchestration) {
@@ -60,17 +63,15 @@ public class RoleUserUDFSetter implements PostProcessHandler {
     OIMClient oimClient = null;  
     // log into the system    
     try {
-      SystemConfigurationService cfgServ = 
-        Platform.getService(SystemConfigurationService.class);
+			logger.finest("Logging in...");
+			CsfAccessor credReader = new CsfAccessor();
+			PasswordCredential creds = credReader.readCredentialsfromCsf("oim", "sysadmin");
+        
+      String strOimUserName = creds.getName();
+      String strOimPassword = new String(creds.getPassword());
 
-      String strOimUserName =
-        cfgServ.getSystemPropertiesForUnauthenticatedUsers(USERNAMESYSPROP)
-        .getPtyValue();
-
-      String strOimPassword =
-        cfgServ.getSystemPropertiesForUnauthenticatedUsers(PWDSYSPROP)
-        .getPtyValue();
-
+			SystemConfigurationService cfgServ = 
+				Platform.getService(SystemConfigurationService.class);
       String strURL =
         cfgServ.getSystemPropertiesForUnauthenticatedUsers(OIMURL)
         .getPtyValue();
