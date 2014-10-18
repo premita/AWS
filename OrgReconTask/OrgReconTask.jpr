@@ -142,11 +142,11 @@
    <hash n="oracle.jdevimpl.config.JProjectLibraries">
       <list n="exportedReferences">
          <hash>
-            <url n="id" path="../../../../Oracle/Libs/iam/platform/Oimclient.jar.library"/>
+            <value n="id" v="Ojdbc6.jar"/>
             <value n="isJDK" v="false"/>
          </hash>
          <hash>
-            <value n="id" v="Ojdbc6.jar"/>
+            <url n="id" path="../../../tools/Oracle/OIM_HOME/client/OIM Client.library"/>
             <value n="isJDK" v="false"/>
          </hash>
          <hash>
@@ -167,7 +167,7 @@
             </hash>
             <hash>
                <list n="classPath">
-                  <url path="../../dfwproject/Helpers/deploy/Helpers.jar" jar-entry=""/>
+                  <url path="resources/Helpers.jar" jar-entry=""/>
                </list>
                <value n="deployedByDefault" v="true"/>
                <value n="description" v="Helpers.jar"/>
@@ -178,11 +178,11 @@
       </hash>
       <list n="libraryReferences">
          <hash>
-            <url n="id" path="../../../../Oracle/Libs/iam/platform/Oimclient.jar.library"/>
+            <value n="id" v="Ojdbc6.jar"/>
             <value n="isJDK" v="false"/>
          </hash>
          <hash>
-            <value n="id" v="Ojdbc6.jar"/>
+            <url n="id" path="../../../tools/Oracle/OIM_HOME/client/OIM Client.library"/>
             <value n="isJDK" v="false"/>
          </hash>
          <hash>

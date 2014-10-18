@@ -72,14 +72,25 @@
                   <url path="config/"/>
                </list>
             </hash>
+            <hash>
+               <list n="pattern-filters">
+                  <string v="+grant_perms.sh"/>
+               </list>
+               <list n="url-path">
+                  <url path="resources/"/>
+               </list>
+            </hash>
+            <hash>
+               <list n="pattern-filters">
+                  <string v="-Csf.jar:Zone.Identifier"/>
+                  <string v="+*"/>
+               </list>
+               <list n="url-path">
+                  <url path="."/>
+               </list>
+            </hash>
          </list>
-         <list n="pattern-filters">
-            <string v="-Csf.jar:Zone.Identifier"/>
-            <string v="+*"/>
-         </list>
-         <list n="url-path">
-            <url path="."/>
-         </list>
+         <list n="url-path"/>
       </hash>
    </hash>
    <hash n="oracle.ide.model.TechnologyScopeConfiguration">
