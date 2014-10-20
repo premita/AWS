@@ -41,7 +41,7 @@ import oracle.iam.platform.entitymgr.vo.SearchRule;
 import oracle.iam.platformservice.api.EntityPublicationService;
 import oracle.iam.scheduler.vo.TaskSupport;
 
-public class OrgReconTask extends TaskSupport {
+public class OrgIDAdjuster extends TaskSupport {
   private static final String TAG = "OrgReconTask";
   private final static Logger m_logger = Logger.getLogger("com.icsynergy");
   

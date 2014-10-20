@@ -1,7 +1,7 @@
 <scheduledTasks xmlns="http://xmlns.oracle.com/oim/scheduler">
     <task>
-        <name>Organization Reconciliation</name>
-        <class>com.icsynergy.awsproject.OrgReconTask</class>
+        <name>Organization ID Adjuster</name>
+        <class>com.icsynergy.awsproject.OrgIDAdjuster</class>
         <description>Reconciles Organization</description>
         <retry>0</retry>
         <parameters>
