@@ -178,6 +178,8 @@ public class OrgReconTask extends TaskSupport {
 
         // no org found
       case 0:
+        // try to search also by name
+        
         // fill in attributes
         org = new Organization();
         org.setAttribute(OrganizationManagerConstants.AttributeName.ORG_NAME.getId(),
