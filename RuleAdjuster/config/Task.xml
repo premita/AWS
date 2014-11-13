@@ -1,0 +1,9 @@
+<scheduledTasks xmlns="http://xmlns.oracle.com/oim/scheduler">
+    <task>
+        <name>Test Task</name>
+        <class>com.icsynergy.awsproject.RuleAdjuster</class>
+        <description>Test Task</description>
+        <retry>0</retry>
+    </task>
+</scheduledTasks>
+
