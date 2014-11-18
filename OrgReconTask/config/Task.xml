@@ -1,7 +1,7 @@
 <scheduledTasks xmlns="http://xmlns.oracle.com/oim/scheduler">
     <task>
-        <name>Organization Reconciliation</name>
-        <class>com.icsynergy.awsproject.OrgReconTask</class>
+        <name>Organization ID Adjuster</name>
+        <class>com.icsynergy.awsproject.OrgIDAdjuster</class>
         <description>Reconciles Organization</description>
         <retry>0</retry>
         <parameters>
@@ -11,12 +11,12 @@
         </parameters>
     </task>
     <task>
-        <name>Org-Venue Lookup Reconciliation</name>
-        <class>com.icsynergy.awsproject.OrgVenueLookupReconTask</class>
-        <description>Reconciles Organization-Venue relationship into a lookup</description>
+        <name>User UDF adjuster</name>
+        <class>com.icsynergy.awsproject.UserUDFSetterTask</class>
+        <description>Adjust user UDFs (Group Names and IDs)</description>
         <retry>0</retry>
-        <parameters>
-            <string-param required="true" helpText="Name of a lookup to populate values into">Lookup Name</string-param>
+				<parameters>
+            <string-param required="false" helpText="User login pattern" default="*">User login pattern</string-param>
         </parameters>
     </task>
 </scheduledTasks>

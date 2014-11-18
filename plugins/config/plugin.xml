@@ -4,7 +4,7 @@
   <plugin pluginclass="com.icsynergy.processplugins.CreateUserSetOrganizationPreProcessHandler"
           version="1.2" name="CreateUserSetOrganizationPreProcessHandler"/>
   <plugin pluginclass="com.icsynergy.processplugins.RoleUserUDFSetter"
-          version="1.1" name="RoleUserUDFSetter"/>
+          version="1.2" name="RoleUserUDFSetter"/>
   <plugin pluginclass="com.icsynergy.processplugins.RoleUserUDFRemover"
           version="1.3" name="RoleUserUDFRemover"/>
   <plugin pluginclass="com.icsynergy.processplugins.NotifyUserIdToUser"
