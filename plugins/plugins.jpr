@@ -72,13 +72,25 @@
                   <url path="config/"/>
                </list>
             </hash>
+            <hash>
+               <list n="pattern-filters">
+                  <string v="+grant_perms.sh"/>
+               </list>
+               <list n="url-path">
+                  <url path="resources/"/>
+               </list>
+            </hash>
+            <hash>
+               <list n="pattern-filters">
+                  <string v="-Csf.jar:Zone.Identifier"/>
+                  <string v="+*"/>
+               </list>
+               <list n="url-path">
+                  <url path="."/>
+               </list>
+            </hash>
          </list>
-         <list n="pattern-filters">
-            <string v="+*"/>
-         </list>
-         <list n="url-path">
-            <url path="."/>
-         </list>
+         <list n="url-path"/>
       </hash>
    </hash>
    <hash n="oracle.ide.model.TechnologyScopeConfiguration">
@@ -138,19 +150,19 @@
    <hash n="oracle.jdevimpl.config.JProjectLibraries">
       <list n="exportedReferences">
          <hash>
-            <url n="id" path="../../../../Oracle/Libs/OIMLibraries/jdev.lib/OIM Client Library.library"/>
+            <url n="id" path="../../../tools/Oracle/OIM_HOME/client/OIM Client.library"/>
             <value n="isJDK" v="false"/>
          </hash>
          <hash>
-            <value n="id" v="Oimclient.jar"/>
+            <url n="id" path="../../../tools/Oracle/OIM_HOME/client/OIM Server.library"/>
+            <value n="isJDK" v="false"/>
+         </hash>
+         <hash>
+            <value n="id" v="Csf.jar"/>
             <value n="isJDK" v="false"/>
          </hash>
          <hash>
             <value n="id" v="Jps-api.jar"/>
-            <value n="isJDK" v="false"/>
-         </hash>
-         <hash>
-            <value n="id" v="OIMServer.jar"/>
             <value n="isJDK" v="false"/>
          </hash>
       </list>
@@ -158,48 +170,39 @@
          <list n="libraryDefinitions">
             <hash>
                <list n="classPath">
-                  <url path="../../../../Oracle/Libs/PS2/oimclient.jar" jar-entry=""/>
+                  <url path="resources/Csf.jar" jar-entry=""/>
                </list>
                <value n="deployedByDefault" v="true"/>
-               <value n="description" v="Oimclient.jar"/>
-               <value n="id" v="Oimclient.jar"/>
+               <value n="description" v="Csf.jar"/>
+               <value n="id" v="Csf.jar"/>
                <value n="locked" v="true"/>
             </hash>
             <hash>
                <list n="classPath">
-                  <url path="../../../../Oracle/Libs/fmw/oracle_common/oracle.jps_11.1.1/jps-api.jar" jar-entry=""/>
+                  <url path="../../../tools/Oracle/JDev7/oracle_common/modules/oracle.jps_11.1.1/jps-api.jar" jar-entry=""/>
                </list>
                <value n="deployedByDefault" v="true"/>
                <value n="description" v="Jps-api.jar"/>
                <value n="id" v="Jps-api.jar"/>
                <value n="locked" v="true"/>
             </hash>
-            <hash>
-               <list n="classPath">
-                  <url path="../../../../Oracle/Libs/iam/OIMServer.jar" jar-entry=""/>
-               </list>
-               <value n="deployedByDefault" v="true"/>
-               <value n="description" v="OIMServer.jar"/>
-               <value n="id" v="OIMServer.jar"/>
-               <value n="locked" v="true"/>
-            </hash>
          </list>
       </hash>
       <list n="libraryReferences">
          <hash>
-            <url n="id" path="../../../../Oracle/Libs/OIMLibraries/jdev.lib/OIM Client Library.library"/>
+            <url n="id" path="../../../tools/Oracle/OIM_HOME/client/OIM Client.library"/>
             <value n="isJDK" v="false"/>
          </hash>
          <hash>
-            <value n="id" v="Oimclient.jar"/>
+            <url n="id" path="../../../tools/Oracle/OIM_HOME/client/OIM Server.library"/>
+            <value n="isJDK" v="false"/>
+         </hash>
+         <hash>
+            <value n="id" v="Csf.jar"/>
             <value n="isJDK" v="false"/>
          </hash>
          <hash>
             <value n="id" v="Jps-api.jar"/>
-            <value n="isJDK" v="false"/>
-         </hash>
-         <hash>
-            <value n="id" v="OIMServer.jar"/>
             <value n="isJDK" v="false"/>
          </hash>
       </list>
