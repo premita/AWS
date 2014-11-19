@@ -92,9 +92,12 @@ public class AttUserEmailResolver implements NotificationEventResolver {
 		else if ( eventType.equalsIgnoreCase("CreateSelfUser")) {
 			resolvedData = getSelfUserResolver(params);
 		}
-		else if ( eventType.equalsIgnoreCase("ForgottenUsername")) {
+		else if ( eventType.equalsIgnoreCase("ForgottenUsername") ||
+							eventType.equalsIgnoreCase("PasswordWarning") ||
+							eventType.equalsIgnoreCase("PasswordExpiration")
+						) {
 			resolvedData = getForgottenUserResolver(params);
-		}
+		} 
 		else //if (eventType.equalsIgnoreCase("NotifyUserIdToUser") || eventType.equalsIgnoreCase("NotifyUserPasswordChanged")) {
 		{
 			resolvedData = new HashMap<String, Object>();

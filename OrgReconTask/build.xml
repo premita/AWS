@@ -11,7 +11,7 @@
   <property name="temp" location="temp"/>
   <property name="PluginName" value="OrgReconTask"/>
   <property name="PluginClassToUnregister"
-            value="com.icsynergy.awsproject.OrgReconTask"/>
+            value="com.icsynergy.awsproject.OrgIDAdjuster"/>
   <property name="OIM.Username" value="xelsysadm"/>
   <property name="ServerURL" value="t3://iam:14000"/>
   <property name="WL.ServerName" value="oim_server1"/>
