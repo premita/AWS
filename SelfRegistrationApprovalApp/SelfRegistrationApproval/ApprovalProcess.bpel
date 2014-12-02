@@ -111,6 +111,7 @@
         <variable name="listAdminEmails" type="xsd:string"/>
         <variable name="adminName" type="xsd:string"/>
         <variable name="adminEmail" type="xsd:string"/>
+        <variable name="DefaultApprover" type="xsd:string"/>
     </variables>
     
     <faultHandlers>
@@ -325,6 +326,7 @@ if ( org_pin != "" ) {
             oracle.iam.identity.rolemgmt.vo.Role role = rmgr.getDetails("Role Name", obj1.toString(), null);    
             System.out.println("role -> " + role);    
             java.util.List<oracle.iam.identity.usermgmt.vo.User>  members = rmgr.getRoleMembers(role.getEntityId(), false);    
+
  /////////  Modified from here ///////////////////////////////////////////////////               
             // if admin list is empty and the request was for a specific role rather than default admin group    
             if (members.size() < 1 && !obj1.toString().equalsIgnoreCase("aws_delegated_admin_default")) {    
@@ -333,7 +335,8 @@ if ( org_pin != "" ) {
                 role = rmgr.getDetails("Role Name", obj1.toString(), null);    
                 members = rmgr.getRoleMembers(role.getEntityId(), false);    
             }    
-/////////// Modifications end here //////////////////////////////////////////                 
+/////////// Modifications end here ////////////////////////////////////////// 
+
         for ( int z=0; z<members.size(); z++ ) {    
             if ( adminName.length() == 0 ) {     
                 adminName = members.get(z).getDisplayName();    
@@ -360,6 +363,12 @@ if ( org_pin != "" ) {
     System.out.println("----------------------");           
 }]]>
         </bpelx:exec>
+        <assign name="get_AWSDefApprover">
+            <copy>
+                <from expression="ora:getPreference('DefaultRequestApprover')"/>
+                <to variable="DefaultApprover"/>
+            </copy>
+        </assign>
         <assign name="AssignRequestWSURL"
                 xmlns="http://schemas.xmlsoap.org/ws/2003/03/business-process/">
       
@@ -410,23 +419,23 @@ if ( org_pin != "" ) {
                     </copy>
                     <copy>
                         <from><payload xmlns="http://xmlns.oracle.com/bpel/workflow/task">
-                                <RequestID xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
-                                <RequestModel xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
-                                <RequestTarget xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
-                                <url xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
-                                <RequesterDetails xmlns="http://xmlns.oracle.com/request/RequestDetails"/>
-                                <BeneficiaryDetails xmlns="http://xmlns.oracle.com/request/RequestDetails"/>
-                                <ObjectDetails xmlns="http://xmlns.oracle.com/request/RequestDetails"/>
-                                <OtherDetails xmlns="http://xmlns.oracle.com/request/RequestDetails"/>
-                                <RequesterDisplayName xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
-                                <BeneficiaryDisplayName xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
-                                <Requester xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
-                                <OrganizationAdmin xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
-                                <Organization xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
-                                <grp_id xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
-                                <BaseWebsiteUrl xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
-                              
-                            </payload></from>
+ <DefaultRequestApproverUser xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+ <RequestModel xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+ <RequestTarget xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+ <url xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+	<RequesterDetails xmlns="http://xmlns.oracle.com/request/RequestDetails"/> 
+	<BeneficiaryDetails xmlns="http://xmlns.oracle.com/request/RequestDetails"/> 
+	<ObjectDetails xmlns="http://xmlns.oracle.com/request/RequestDetails"/> 
+	<OtherDetails xmlns="http://xmlns.oracle.com/request/RequestDetails"/> 
+ <RequesterDisplayName xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+ <BeneficiaryDisplayName xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+ <Requester xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+ <OrganizationAdmin xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+ <Organization xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+ <grp_id xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+ <RequestID xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+ <BaseWebsiteUrl xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+</payload></from>
                         <to variable="initiateTaskInput" part="payload"
                             query="/ns2:initiateTask/task:task/task:payload"/>
                     </copy>
@@ -527,6 +536,11 @@ if ( org_pin != "" ) {
                         <from variable="BaseWebsiteUrl"/>
                         <to variable="initiateTaskInput" part="payload"
                             query="/ns2:initiateTask/task:task/task:payload/task:BaseWebsiteUrl"/>
+                    </copy>
+                    <copy>
+                        <from variable="DefaultApprover"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/ns2:initiateTask/task:task/task:payload/task:DefaultRequestApproverUser"/>
                     </copy>
                 </assign>
                 <assign name="Assign_emailinfo">
