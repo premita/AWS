@@ -1,7 +1,9 @@
 package com.icsynergy.awsproject;
 
+
 import com.icsynergy.helpers.ITResHelper;
 import com.icsynergy.helpers.JDBCHelper;
+import com.icsynergy.helpers.LookupHelper;
 import com.icsynergy.helpers.SysConfigHelper;
 
 import java.sql.Connection;
@@ -9,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -28,7 +31,10 @@ import oracle.iam.identity.rolemgmt.api.RoleManager;
 import oracle.iam.identity.rolemgmt.api.RoleManagerConstants;
 import oracle.iam.identity.rolemgmt.vo.Role;
 import oracle.iam.identity.rolemgmt.vo.RoleManagerResult;
+import oracle.iam.identity.usermgmt.api.UserManager;
 import oracle.iam.identity.usermgmt.api.UserManagerConstants;
+import oracle.iam.notification.api.NotificationService;
+import oracle.iam.notification.vo.NotificationEvent;
 import oracle.iam.platform.Platform;
 import oracle.iam.platform.authopss.api.PolicyConstants;
 import oracle.iam.platform.authopss.vo.EntityPublication;
@@ -37,8 +43,9 @@ import oracle.iam.platform.entitymgr.vo.SearchRule;
 import oracle.iam.platformservice.api.EntityPublicationService;
 import oracle.iam.scheduler.vo.TaskSupport;
 
+
 public class OrgReconTask extends TaskSupport {
-  private static final String TAG = "OrgReconTask 0.9.5";
+  private static final String TAG = "OrgReconTask 0.9.6";
   private final static Logger m_logger = Logger.getLogger("com.icsynergy");
   
   // task parameter names
@@ -55,6 +62,9 @@ public class OrgReconTask extends TaskSupport {
 
   // system variable to read IT resource name containing DB connection params from
   private static final String SYSVARCODE = "AWS.DBITResName";
+	private static final String CONFIGLOOKUP = "Lookup.AWS.Configuration";
+	private static final String CONFIGORGCREATEUSERTONOTIFY = "org.create.user.notify";
+	private static final String CONFIGORGCREATETEMPLATE = "org.create.notification.template";
 
   // custom role modifiers
   private static final String ROLENAMEPREFIX = "aws_delegated_admin_";
@@ -65,7 +75,10 @@ public class OrgReconTask extends TaskSupport {
   private static final String UDFGRPID = "grp_id";
   
   // Services
+	private final UserManager usrMgr = Platform.getService(UserManager.class);
   private final RoleManager roleMgr = Platform.getService(RoleManager.class);
+	private final NotificationService srvNotification = 
+		Platform.getService(NotificationService.class);
 
   public void execute(HashMap hashMap) throws Exception {
     m_logger.entering(TAG, "execute", hashMap.toString());
@@ -123,20 +136,25 @@ public class OrgReconTask extends TaskSupport {
     Statement stmt = conn.createStatement();
     ResultSet rs = stmt.executeQuery(SQL);
 
+		if (roleMgr == null)
+			throw new Exception("Can't get role manager interface");
+
+		if (srvNotification == null)
+			throw new Exception("Can't get Notification interface");
+		
+		if (usrMgr == null)
+			throw new Exception("Can't get user manager interface");
+
     OrganizationManager orgMgr =
       Platform.getService(OrganizationManager.class);
     if (orgMgr == null)
       throw new Exception("Can't get Organization interface");
 
-    RoleManager roleMgr = Platform.getService(RoleManager.class);
-    if (roleMgr == null)
-      throw new Exception("Can't get role manager interface");
-
     EntityPublicationService srv =
       Platform.getService(EntityPublicationService.class);
     if (srv == null)
       throw new Exception("Can't get EntityPublication service");
-
+		
     // list of entities to publish
     List<EntityPublication> lstEntities = new ArrayList<EntityPublication>();
     // ... to unpublish
@@ -193,6 +211,13 @@ public class OrgReconTask extends TaskSupport {
         String strStatus = orgMgr.create(org);
         m_logger.fine("Organization created: " + rs.getString(MG) +
                       ". Status: " + strStatus);
+				
+				// send notification (all logging is inside)
+				if (sendOrgCreateNotification(rs.getString(MG))) {
+					m_logger.fine("Notification has been sent");
+				} else {
+					m_logger.severe("Error sending the notification");
+				}
 
         /****************** ROLES section ***********************************/
         // search for a role with a name aws_delegated_admin + Management Group ID
@@ -631,4 +656,47 @@ public class OrgReconTask extends TaskSupport {
     m_logger.exiting(TAG, "setMembershipRule", rmResult.toString());
     return rmResult;
   }
+	
+	private boolean sendOrgCreateNotification (String strOrgName) throws Exception {
+		m_logger.entering(TAG, "sendOrgCreateNotification", strOrgName);
+		
+		boolean bRet = false;
+		LookupHelper helper = 
+			LookupHelper.getLookupHelper(CONFIGLOOKUP);
+		
+		if (helper == null)
+			throw new Exception("Can't get the configuration lookup");
+		
+		String strUsrLogin = 
+			helper.getLookupValueForEncoded(CONFIGORGCREATEUSERTONOTIFY);
+		if (strUsrLogin == null)
+			throw new Exception("User to notify on org creation is not set");
+		m_logger.fine("User to notify: " + strUsrLogin);
+
+		// check if the user, specified in the lookup, exists in OIM
+		// if not an Exception is thrown
+		usrMgr.getDetails(strUsrLogin, null, true);
+		
+		String[] arTo = {strUsrLogin};
+
+		String strTemplate = 
+			helper.getLookupValueForEncoded(CONFIGORGCREATETEMPLATE);
+		if (strTemplate == null || strTemplate.length() == 0)
+			throw new Exception("Notification template for organization creation " +
+				"is not set");
+		
+		NotificationEvent event = new NotificationEvent();
+		event.setTemplateName(strTemplate);
+		event.setUserIds(arTo);
+		
+		// attach data
+	  HashMap<String,Object> map = new HashMap<>();
+		map.put("org_name", strOrgName);
+		event.setParams(map);
+		
+		bRet = srvNotification.notify(event);
+		
+	  m_logger.exiting(TAG, "sendOrgCreateNotification", bRet);
+		return bRet;
+	}
 }

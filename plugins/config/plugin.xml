@@ -14,5 +14,6 @@
  </plugins>
  	<plugins pluginpoint="oracle.iam.notification.impl.NotificationEventResolver">
 		<plugin pluginclass="com.icsynergy.notification.AttUserEmailResolver" version="1.0" name="AttUserEmailResolver"/>
+		<plugin pluginclass="com.icsynergy.notification.orgResolver" version="0.1.1" name="orgResolver"/>
 	</plugins>
 </oimplugins>
