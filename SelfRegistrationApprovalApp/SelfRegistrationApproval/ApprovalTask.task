@@ -26,11 +26,30 @@ xmlns:task="http://xmlns.oracle.com/bpel/workflow/task" xmlns:xsd="http://www.w3
          </sharePayloadConfiguration>
       </globalConfiguration>
       <participants isAdhocRoutingSupported="false">
-         <stage name="Stage1">
-            <participant name="Stage1.Participant1">
-               <resource type="XPATH" identityType="group">/task:task/task:payload/task:OrganizationAdmin</resource>
-            </participant>
-         </stage>
+         <parallel collaboration="false" name="ParallelStages">
+            <vote>
+               <defaultOutcome type="STATIC">APPROVE</defaultOutcome>
+               <outcomePercentage type="STATIC">50</outcomePercentage>
+            </vote>
+            <routingSlip>
+               <participants>
+                  <stage name="Stage1">
+                     <participant name="Stage1.Participant1">
+                        <resource type="XPATH" identityType="group">/task:task/task:payload/task:OrganizationAdmin</resource>
+                     </participant>
+                  </stage>
+               </participants>
+            </routingSlip>
+            <routingSlip>
+               <participants>
+                  <stage name="Stage2">
+                     <participant name="Default Request Approver">
+                        <resource type="XPATH" identityType="user">/task:task/task:payload/task:DefaultRequestApproverUser</resource>
+                     </participant>
+                  </stage>
+               </participants>
+            </routingSlip>
+         </parallel>
       </participants>
       <notification includeTaskAttachments="false" actionable="false"
                     secureNotifications="true"
@@ -96,6 +115,9 @@ xmlns:task="http://xmlns.oracle.com/bpel/workflow/task" xmlns:xsd="http://www.w3
          <messageAttribute name="BaseWebsiteUrl" attributeType="SIMPLE_TYPE"
                            type="xsd:string" updatable="false"
                            external="false"/>
+         <messageAttribute name="DefaultRequestApproverUser"
+                           attributeType="SIMPLE_TYPE" type="xsd:string"
+                           updatable="false" external="false"/>
       </payload>
       <bpelEventListener>false</bpelEventListener>
       <bpelNoCallbacks>false</bpelNoCallbacks>
