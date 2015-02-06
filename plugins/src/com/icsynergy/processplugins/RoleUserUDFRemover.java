@@ -13,13 +13,23 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import oracle.iam.identity.exception.OrganizationManagerException;
+import oracle.iam.identity.orgmgmt.api.OrganizationManager;
+import oracle.iam.identity.orgmgmt.vo.Organization;
 import oracle.iam.identity.rolemgmt.api.RoleManager;
 import oracle.iam.identity.rolemgmt.api.RoleManagerConstants;
 import oracle.iam.identity.rolemgmt.vo.Role;
 import oracle.iam.identity.usermgmt.api.UserManager;
 import oracle.iam.identity.usermgmt.vo.User;
 import oracle.iam.platform.Platform;
+import oracle.iam.platform.authopss.api.AdminRoleService;
+import oracle.iam.platform.authopss.vo.AdminRole;
+import oracle.iam.platform.authopss.vo.AdminRoleMembership;
 import oracle.iam.platform.context.ContextManager;
+import oracle.iam.platform.entitymgr.vo.SearchCriteria;
 import oracle.iam.platform.kernel.spi.PostProcessHandler;
 import oracle.iam.platform.kernel.vo.AbstractGenericOrchestration;
 import oracle.iam.platform.kernel.vo.BulkEventResult;
@@ -29,7 +39,7 @@ import oracle.iam.platform.kernel.vo.Orchestration;
 
 public class RoleUserUDFRemover implements PostProcessHandler {
   private final static Logger logger = Logger.getLogger("com.icsynergy");
-  private final static String TAG = RoleUserUDFSetter.class.getCanonicalName();
+  private final static String TAG = RoleUserUDFRemover.class.getCanonicalName();
 
   public EventResult execute(long l, long l2, Orchestration orchestration) {
     logger.entering(TAG, "execute");
@@ -113,9 +123,29 @@ public class RoleUserUDFRemover implements PostProcessHandler {
         String strRoleDesc = role.getDescription();
         logger.finest("Role name: " + strRoleName + " Description: " + strRoleDesc);
         
-        // skip aws_delegated_admin_xxx roles
-        if (strRoleName.indexOf("aws_delegated_admin") == 0) {
-          logger.finest("The role to remove is aws_delegated_admin_xxx one. Skipping");
+				// skip aws_delegated_admin_default roles
+				if (strRoleName.indexOf("aws_delegated_admin_default") == 0) {
+					logger.finest("The role to remove is aws_delegated_admin_default one. Skipping");
+					continue;
+				}
+
+				Pattern ptrn = Pattern.compile("aws_delegated_admin_([0-9]+)");
+				Matcher matcher = ptrn.matcher(strRoleName);
+
+        if (matcher.matches()) {
+					logger.finest("The role to remove is aws_delegated_admin_xxx one." +
+						" Removing admin role...");
+					if (!removeUserAdminRole(strUserKey, matcher.group(1))) {
+						logger.warning("Can't remove User Administrator role from user: " +
+													 strUserKey + " for organization with Group Id: " + 
+													 matcher.group(1));
+						continue;
+					} else {
+						logger.fine("User Administrator role has been successfully removed" +
+							" from user: " + strUserKey + " for organization with Group Id: " + 
+												matcher.group(1));
+					}
+
           continue;
         }
         
@@ -185,6 +215,54 @@ public class RoleUserUDFRemover implements PostProcessHandler {
     logger.exiting(TAG, "execute");
     return new EventResult();
   }
+
+	private boolean removeUserAdminRole (String strUserKey, String strOrgGrpId) {
+		logger.entering(TAG, "removeUserAdminRole", strUserKey + " " + strOrgGrpId);
+		boolean bRet = true;
+		
+	  if (strUserKey == null || strOrgGrpId == null) {
+	    logger.warning("Params can't be null. Exiting...");
+	    return false;
+	  }
+	  
+	  OrganizationManager orgMgr = Platform.getService(OrganizationManager.class);
+	  AdminRoleService srvAdmRole = Platform.getService(AdminRoleService.class);
+	  
+	  List<Organization> lstOrg = null;
+	  AdminRole admRoleUserAdmin = null;
+
+	  try {
+	    SearchCriteria critOrgDesc 
+	      = new SearchCriteria("grp_id", strOrgGrpId, SearchCriteria.Operator.EQUAL);
+	    lstOrg = orgMgr.search(critOrgDesc, null, null);
+	    logger.finest("Organization key: " + lstOrg.get(0).getEntityId());
+	    
+	    admRoleUserAdmin = srvAdmRole.getAdminRole("OrclOIMUserAdmin");   
+	    logger.finest("Admin role display name: " + admRoleUserAdmin.getRoleDisplayName());
+	  } catch (OrganizationManagerException e) {
+	    logger.severe("Can't find organization with GrpId:" + strOrgGrpId);
+	    return false;
+	  }
+
+	  // check if Admin Role is assigned 
+	  List<AdminRoleMembership> lstAdmRolesAssigned =
+	    srvAdmRole.listUsersMembership(strUserKey, "OrclOIMUserAdmin", 
+	                                   lstOrg.get(0).getEntityId(), false, null);
+	  logger.finest("List of assigned admin roles for user: " + lstAdmRolesAssigned.toString());
+
+	  if (lstAdmRolesAssigned.size() == 0) {
+	    logger.finest("User Administrator admin role is not assigned to the user" +
+	      " for this organization. Exiting...");
+	    return true;
+	  }
+		
+	  // remove admin role
+	  srvAdmRole.removeAdminRoleMembership(lstAdmRolesAssigned.get(0));
+		
+	  logger.exiting(TAG, "removeUserAdminRole", strUserKey + " " + strOrgGrpId +
+									 " -> " + bRet);
+		return bRet;
+	}
 
   public BulkEventResult execute(long l, long l2,
                                  BulkOrchestration bulkOrchestration) {
