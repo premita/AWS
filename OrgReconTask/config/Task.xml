@@ -11,6 +11,26 @@
         </parameters>
     </task>
     <task>
+        <name>Organization Reconciliation</name>
+        <class>com.icsynergy.awsproject.OrgReconTask</class>
+        <description>Reconciles Organization</description>
+        <retry>0</retry>
+        <parameters>
+            <string-param required="true" helpText="Name of a view to pull a data from">Table Name</string-param>
+            <string-param required="false" helpText="Group IDs to filter out with | as a separator">ID List To Filter Out</string-param>
+            <string-param required="true" helpText="Default admin role name">Default Admin Role</string-param>
+        </parameters>
+    </task>
+    <task>
+        <name>Delete Organization</name>
+        <class>com.icsynergy.awsproject.OrgDeleteTask</class>
+        <description>Delete Organization</description>
+        <retry>0</retry>
+        <parameters>
+            <string-param required="true" helpText="Name of an organization to delete">Organization Name</string-param>
+        </parameters>
+    </task>
+    <task>
         <name>User UDF adjuster</name>
         <class>com.icsynergy.awsproject.UserUDFSetterTask</class>
         <description>Adjust user UDFs (Group Names and IDs)</description>

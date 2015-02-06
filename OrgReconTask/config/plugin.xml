@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <oimplugins xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <plugins pluginpoint="oracle.iam.scheduler.vo.TaskSupport">
+    <plugin pluginclass="com.icsynergy.awsproject.OrgReconTask"
+            version="0.11.0" name="OrgReconTask"></plugin>
     <plugin pluginclass="com.icsynergy.awsproject.OrgIDAdjuster"
             version="0.10.1" name="OrgIDAdjuster"></plugin>
     <plugin pluginclass="com.icsynergy.awsproject.UserUDFSetterTask"
             version="0.0.1" name="UserUDFSetterTask"></plugin>
+    <plugin pluginclass="com.icsynergy.awsproject.OrgDeleteTask"
+            version="0.0.1" name="OrgDeleteTask"></plugin>
   </plugins>
 </oimplugins>

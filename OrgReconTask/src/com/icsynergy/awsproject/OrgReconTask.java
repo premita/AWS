@@ -49,7 +49,7 @@ public class OrgReconTask extends TaskSupport {
   // table name fields
   private static final String MG = "MANAGEMENT_GROUP";
   private static final String MGPIN = "MANAGEMENT_GROUP_PIN";
-  private static final String MGID = "MANGEMENT_GROUP_ID";
+  private static final String MGID = "MANAGEMENT_GROUP_ID";
   private static final String strSQLTemplate =
     "SELECT %s, %s, %s FROM %s WHERE %s NOT IN (%s) GROUP BY %s, %s, %s";
 
