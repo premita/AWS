@@ -39,5 +39,15 @@
             <string-param required="false" helpText="User login pattern" default="*">User login pattern</string-param>
         </parameters>
     </task>
+     <task>
+        <name>Password Warning Notificator</name>
+        <class>com.icsynergy.awsproject.PasswordWarningNotificator</class>
+        <description>Notifies users before their password is going to expire</description>
+        <retry>0</retry>
+        <parameters>
+            <number-param required="true" helpText="Days before password expiration">Days Before Expiration</number-param>
+            <string-param required="true" helpText="Template name to use while notifying">Template Name</string-param>
+        </parameters>
+    </task>    
 </scheduledTasks>
 

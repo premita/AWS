@@ -9,5 +9,7 @@
             version="0.0.1" name="UserUDFSetterTask"></plugin>
     <plugin pluginclass="com.icsynergy.awsproject.OrgDeleteTask"
             version="0.0.1" name="OrgDeleteTask"></plugin>
+    <plugin pluginclass="com.icsynergy.awsproject.PasswordWarningNotificator"
+            version="0.0.1" name="PasswordWarningNotificator"></plugin>
   </plugins>
 </oimplugins>
