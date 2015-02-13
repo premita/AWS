@@ -11,5 +11,7 @@
             version="0.0.1" name="OrgDeleteTask"></plugin>
     <plugin pluginclass="com.icsynergy.awsproject.PasswordWarningNotificator"
             version="0.0.1" name="PasswordWarningNotificator"></plugin>
+    <plugin pluginclass="com.icsynergy.awsproject.expireCustomActionWithNotification"
+            version="0.0.1" name="expireCustomActionWithNotification"></plugin>
   </plugins>
 </oimplugins>

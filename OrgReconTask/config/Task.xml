@@ -49,5 +49,16 @@
             <string-param required="true" helpText="Template name to use while notifying">Template Name</string-param>
         </parameters>
     </task>    
+     <task>
+        <name>Past Expire Action with Notification</name>
+        <class>com.icsynergy.awsproject.expireCustomActionWithNotification</class>
+        <description>Perform a specific action with a notification upon a user who's past a password expire date </description>
+        <retry>0</retry>
+        <parameters>
+            <number-param required="true" helpText="Days past a password expiration date">Days Past Expiration</number-param>
+            <string-param required="false" helpText="Template name to use while notifying">Template Name</string-param>
+            <string-param required="false" helpText="Action to perform (Lock, Disable, Delete)">Action</string-param>
+        </parameters>
+    </task>    
 </scheduledTasks>
 
