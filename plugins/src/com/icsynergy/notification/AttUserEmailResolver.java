@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import oracle.iam.identity.orgmgmt.api.OrganizationManager;
 import oracle.iam.identity.orgmgmt.vo.Organization;
@@ -13,6 +12,7 @@ import oracle.iam.identity.usermgmt.vo.User;
 import oracle.iam.notification.impl.NotificationEventResolver;
 import oracle.iam.notification.vo.NotificationAttribute;
 import oracle.iam.platform.Platform;
+
 
 public class AttUserEmailResolver implements NotificationEventResolver {
 	private static final String TAG = "AttUserEmailResolver";
@@ -127,13 +127,14 @@ public class AttUserEmailResolver implements NotificationEventResolver {
 			resolvedData.put("userLogin", userLogin);
 			resolvedData.put("organization", orgName);
 		}
-		System.out.println(TAG + ": exiting getReplacedData");
+		System.out.println(TAG + ": exiting getReplacedData with resolvedData -> " +
+                       resolvedData.toString());
 		return resolvedData;
 	}
 
 	private HashMap<String, Object> getForgottenUserResolver(
 			Map<String, Object> params) {
-		HashMap<String, Object> retval = new HashMap<String, Object>();
+		HashMap<String, Object> retval = new HashMap<String, Object>(params);
 		String loginId = params.get("userLoginId").toString().replace("[", "").replace("]","");
 		System.out.println("login id: " + loginId);
 		

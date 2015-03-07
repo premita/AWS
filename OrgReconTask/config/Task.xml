@@ -22,12 +22,13 @@
         </parameters>
     </task>
     <task>
-        <name>Delete Organization</name>
-        <class>com.icsynergy.awsproject.OrgDeleteTask</class>
-        <description>Delete Organization</description>
+        <name>Assign Managers</name>
+        <class>com.icsynergy.awsproject.AssignManagerFromWFApprovalTask</class>
+        <description>Set managers for users based on their request approver</description>
         <retry>0</retry>
         <parameters>
-            <string-param required="true" helpText="Name of an organization to delete">Organization Name</string-param>
+            <string-param required="true" helpText="Notification template to use">Template Name</string-param>
+            <string-param required="true" helpText="Whom to notify">User to Notify</string-param>
         </parameters>
     </task>
     <task>
