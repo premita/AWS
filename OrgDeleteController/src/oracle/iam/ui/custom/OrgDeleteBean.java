@@ -256,9 +256,6 @@ public class OrgDeleteBean implements Serializable {
         break;
       }
       result = findComponent(children, id);
-      if (result != null) {
-        break;
-      }
     }
     return result;
   }

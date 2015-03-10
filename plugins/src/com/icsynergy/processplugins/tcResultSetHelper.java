@@ -1,27 +1,25 @@
 package com.icsynergy.helpers;
 
-import Thor.API.Exceptions.tcAPIException;
 import Thor.API.tcResultSet;
 
 import java.util.logging.Logger;
 
 public class tcResultSetHelper {
     
-    private static final String TAG = "tcResultSetHelper";
     private static final Logger logger = Logger.getLogger("com.icsynergy");
     
     public static void printResultSet( tcResultSet res, String str, Logger logger ) {
-        String strRes = str + "\n";
+        StringBuilder strRes = new StringBuilder(str + "\n");
 
         try {
             for( int i=0; i<res.getRowCount(); i++) {
-                strRes += "------------------------------------------------------\n";
+                strRes.append("------------------------------------------------------\n");
                 res.goToRow(i);
                 for( String strCol : res.getColumnNames() ) {
-                    strRes += strCol + " = " + res.getStringValue(strCol) + "\n";
+                    strRes.append(strCol).append(" = ").append(res.getStringValue(strCol)).append("\n");
                 }
             }
-            logger.finest(strRes);
+            logger.finest(strRes.toString());
         } catch (Exception e) {
             logger.severe(e.toString());
         }

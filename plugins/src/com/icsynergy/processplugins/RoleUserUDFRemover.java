@@ -58,15 +58,16 @@ public class RoleUserUDFRemover implements PostProcessHandler {
       arstrRoleKeys = (List<String>) map.get("roleKeys");
     }
 
-    logger.finest("Role Key: " + arstrRoleKeys.toString());
+    logger.finest("Role Key: " + 
+                  arstrRoleKeys == null ? null : arstrRoleKeys.toString());
     logger.finest("User Keys: " + lstUsrKeys.toString());
 
     RoleManager roleMgr = Platform.getService(RoleManager.class);
     UserManager usrMgr = 
       Platform.getServiceForEventHandlers(UserManager.class,
-                                          ContextManager.getContextKey().toString(),
+                                          ContextManager.getContextKey(),
                                           ContextManager.getContextType().toString(),
-                                          ContextManager.getContextSubType().toString(),
+                                          ContextManager.getContextSubType(),
                                           ContextManager.getAllValuesFromCurrentContext());
     
     Set<String> setAttr = new HashSet<String>();

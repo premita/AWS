@@ -126,6 +126,9 @@ public class OrgReconTask extends TaskSupport {
           new JDBCHelper(map.get(ITResHelper.Constants.GTCDBDriverParamName),
                          map);
 
+    if (helper == null)
+      throw new Exception("Can't get a JDBC helper instance");
+    
     Connection conn = helper.getConnection();
     if (conn == null)
       throw new Exception("Can't get a connection to DB");

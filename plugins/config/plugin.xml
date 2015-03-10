@@ -6,7 +6,7 @@
   <plugin pluginclass="com.icsynergy.processplugins.RoleUserUDFSetter"
           version="1.4" name="RoleUserUDFSetter"/>
   <plugin pluginclass="com.icsynergy.processplugins.RoleUserUDFRemover"
-          version="1.4" name="RoleUserUDFRemover"/>
+          version="1.5" name="RoleUserUDFRemover"/>
   <plugin pluginclass="com.icsynergy.processplugins.NotifyUserIdToUser"
           version="1.0" name="NotifyUserIdToUser"/>
   <plugin pluginclass="com.icsynergy.processplugins.NotifyUserPasswordChanged"

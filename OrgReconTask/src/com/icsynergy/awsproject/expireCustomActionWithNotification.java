@@ -128,7 +128,7 @@ public class expireCustomActionWithNotification extends TaskSupport {
       NotificationEvent event = new NotificationEvent();
       // if notification template set
       if (!strTemplateName.isEmpty()) {
-        event.setTemplateName(strTemplateName.toString());
+        event.setTemplateName(strTemplateName);
         event.setSender(null);
       }
       
@@ -177,10 +177,13 @@ public class expireCustomActionWithNotification extends TaskSupport {
         case "DELETE" :
           usrmgrResult = usrmgr.delete(usrIDs, false);
           break;
+        default :
+          logger.warning("Unknown action");
         }
 
         // Log operation results
-        logger.finest("Status: " + usrmgrResult.getStatus());
+        logger.finest("Status: " + 
+                      usrmgrResult == null ? null : usrmgrResult.getStatus());
 
         List lstActionSucceed = usrmgrResult.getSucceededResults();
         HashMap<String, String> mapDisableFailed = 

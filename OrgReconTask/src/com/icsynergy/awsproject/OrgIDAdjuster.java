@@ -122,6 +122,9 @@ public class OrgIDAdjuster extends TaskSupport {
           new JDBCHelper(map.get(ITResHelper.Constants.GTCDBDriverParamName),
                          map);
 
+    if (helper == null)
+      throw new Exception("Can't get a JDBC helper instance");
+    
     Connection conn = helper.getConnection();
     if (conn == null)
       throw new Exception("Can't get a connection to DB");
@@ -403,7 +406,7 @@ public class OrgIDAdjuster extends TaskSupport {
 						if (bChangeName) {
 							Role role = new Role(strRoleKey);
 							role.setDisplayName(rs.getString(MG) + " " + ROLENAMESUFFIX);
-							RoleManagerResult rmResult = roleMgr.modify(role);
+							roleMgr.modify(role);
 							
 							m_logger.finest("Role display name has been set to: " + 
 															rs.getString(MG) + " " + ROLENAMESUFFIX);
@@ -415,9 +418,7 @@ public class OrgIDAdjuster extends TaskSupport {
 						
 						// set if required
 						if (bSetHierarchy) {
-							RoleManagerResult rmResult = 
-								roleMgr.addRoleRelationship(strDefaultAdminRoleKey, 
-																					strRoleKey);
+							roleMgr.addRoleRelationship(strDefaultAdminRoleKey, strRoleKey);
 							
 							m_logger.finest("Hierarchy for role: " + 
 															ROLENAMEPREFIX + rs.getString(MGID) + " set");
@@ -498,8 +499,7 @@ public class OrgIDAdjuster extends TaskSupport {
 							roleMgr.getUserMembershipRule(strRoleKey);
 						
 						if (rule == null) {
-							RoleManagerResult rmResult = setMembershipRule(strRoleKey, 
-																					 rs.getString(MG));
+							setMembershipRule(strRoleKey, rs.getString(MG));
 						}
 	
 						

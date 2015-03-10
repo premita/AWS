@@ -67,7 +67,7 @@ public class RoleUserUDFSetter implements PostProcessHandler {
     }
 
     logger.finest("User Keys: " + lstUsrKeys.toString());
-    logger.finest("Role keys: " + arstrRoleKeys.toString());
+    logger.finest("Role keys: " + arstrRoleKeys == null ? null : arstrRoleKeys.toString());
     
     OIMClient oimClient = null;  
     // log into the system    

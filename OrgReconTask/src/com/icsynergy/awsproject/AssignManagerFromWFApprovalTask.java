@@ -97,6 +97,8 @@ public class AssignManagerFromWFApprovalTask extends TaskSupport {
                               "jazn.com");
       
       connDB = Platform.getOperationalDS().getConnection();
+    } catch (RuntimeException e) {
+      throw e;
     } catch (Exception e) {
       logger.log(Level.SEVERE, "Exception!", e);
     }
@@ -156,7 +158,7 @@ public class AssignManagerFromWFApprovalTask extends TaskSupport {
         return;
       }      
 
-      switch (usr.getLogin().toUpperCase()) {
+      switch (usr.getLogin().toUpperCase(Locale.getDefault())) {
       case "XELSYSADM" :
       case "OIMINTERNAL" :
       case "WEBLOGIC" :
@@ -253,17 +255,17 @@ public class AssignManagerFromWFApprovalTask extends TaskSupport {
     
     logger.entering(TAG, "getRequestNumberForUser", strUserLogin);
 
-    try {
+    try (PreparedStatement stmt = connDB.prepareStatement(strSQL)) {
       logger.finest("preparing statement...");
-      PreparedStatement stmt = connDB.prepareStatement(strSQL);
       stmt.setString(1, strUserLogin);
       
       logger.finest("running query...");
-      ResultSet rs = stmt.executeQuery();
+      try (ResultSet rs = stmt.executeQuery()) {
       
-      logger.finest("fetching result...");
-      while (rs.next()) {
-        lRet = rs.getLong("REQ_KEY");
+        logger.finest("fetching result...");
+        while (rs.next()) {
+          lRet = rs.getLong("REQ_KEY");
+        }
       }
     } catch (SQLException e) {
       logger.log(Level.SEVERE, "Exception", e);

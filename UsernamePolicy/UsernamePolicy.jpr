@@ -53,50 +53,34 @@
       <string v="oracle.ide.model.ResourcePaths/resourcesContentSet"/>
       <string v="oracle.jdeveloper.offlinedb.model.OfflineDBProjectSettings/offlineDBContentSet"/>
       <string v="oracle.jdeveloper.model.J2eeSettings/webContentSet"/>
-      <string v="oracle.bm.commonIde.data.project.ModelerProjectSettings/modelersContentSet"/>
       <string v="oracle.mds.internal.dt.ide.MDSLibraryCustCSProvider/mdsContentSet"/>
+      <string v="oracle.bm.commonIde.data.project.ModelerProjectSettings/modelersContentSet"/>
       <string v="oracle.adfdtinternal.model.ide.settings.ADFMSettings/adfmContentSet"/>
       <string v="oracle.toplink.workbench.addin/toplinkContentSet"/>
       <string v="oracle.tip.tools.ide.fabric.addin.SCAContentSetProvider/sca-content"/>
    </list>
-   <value n="defaultPackage" v="com.icsynergy.awsproject"/>
+   <value n="defaultPackage" v="usernamepolicy"/>
    <hash n="oracle.ide.model.ResourcePaths">
       <hash n="resourcesContentSet">
          <list n="constituent-sets">
             <hash>
-               <list n="pattern-filters">
-                  <string v="+"/>
-                  <string v="+Task.xml"/>
-               </list>
-               <list n="url-path">
-                  <url path="resources/"/>
-               </list>
-            </hash>
-            <hash>
-               <list n="pattern-filters">
-                  <string v="+plugin.xml"/>
-                  <string v="+Task.xml"/>
-               </list>
                <list n="url-path">
                   <url path="config/"/>
                </list>
             </hash>
-            <hash>
-               <list n="pattern-filters">
-                  <string v="+*"/>
-               </list>
-               <list n="url-path">
-                  <url path="."/>
-               </list>
-            </hash>
          </list>
-         <list n="url-path"/>
+         <list n="pattern-filters">
+            <string v="+*"/>
+         </list>
+         <list n="url-path">
+            <url path="."/>
+         </list>
       </hash>
    </hash>
    <hash n="oracle.ide.model.TechnologyScopeConfiguration">
       <list n="technologyScope">
          <string v="Java"/>
-         <string v="XML"/>
+         <string v="Ant"/>
       </list>
    </hash>
    <hash n="oracle.jdeveloper.compiler.OjcConfiguration">
@@ -114,31 +98,8 @@
       <value n="webIANAEncoding" v="windows-1252"/>
    </hash>
    <hash n="oracle.jdeveloper.model.J2eeSettings">
-      <value n="j2eeWebAppName" v="AWS-OrgReconTask-webapp"/>
-      <value n="j2eeWebContextRoot" v="AWS-OrgReconTask-context-root"/>
-   </hash>
-   <hash n="oracle.jdeveloper.model.PathsConfiguration">
-      <hash n="javaContentSet">
-         <list n="constituent-sets">
-            <hash>
-               <url n="content-folder-url" path="../ExpirePasswordDisable/src/com/icsynergy/awsproject/"/>
-               <list n="pattern-filters">
-                  <string v="-com/icsynergy/awsproject/expireCustomActionWithNotification.java"/>
-                  <string v="+com/icsynergy/awsproject/"/>
-               </list>
-               <list n="url-path">
-                  <url path="../ExpirePasswordDisable/src/"/>
-               </list>
-            </hash>
-         </list>
-         <list n="pattern-filters">
-            <string v="-com/icsynergy/helpers/ITResHelper.java"/>
-            <string v="+**"/>
-         </list>
-         <list n="url-path">
-            <url path="src/"/>
-         </list>
-      </hash>
+      <value n="j2eeWebAppName" v="AWSProject-UsernamePolicy-webapp"/>
+      <value n="j2eeWebContextRoot" v="AWSProject-UsernamePolicy-context-root"/>
    </hash>
    <hash n="oracle.jdeveloper.runner.RunConfigurations">
       <hash n="runConfigurationDefinitions">
@@ -154,101 +115,13 @@
    <hash n="oracle.jdevimpl.config.JProjectLibraries">
       <list n="exportedReferences">
          <hash>
-            <value n="id" v="Ojdbc6.jar"/>
-            <value n="isJDK" v="false"/>
-         </hash>
-         <hash>
-            <url n="id" path="../../../tools/Oracle/OIM_HOME/client/OIM Client.library"/>
-            <value n="isJDK" v="false"/>
-         </hash>
-         <hash>
-            <value n="id" v="Helpers.jar"/>
-            <value n="isJDK" v="false"/>
-         </hash>
-         <hash>
-            <value n="id" v="Csf.jar"/>
-            <value n="isJDK" v="false"/>
-         </hash>
-         <hash>
-            <value n="id" v="Com.oracle.jps-api_1.0.0.0.jar"/>
-            <value n="isJDK" v="false"/>
-         </hash>
-         <hash>
-            <value n="id" v="SOA Workflow"/>
-            <value n="isJDK" v="false"/>
-         </hash>
-         <hash>
-            <value n="id" v="SOA Designtime"/>
+            <url n="id" path="../../../AppData/Roaming/JDeveloper/system11.1.1.6.38.62.29/o.jdeveloper/OIM_11.1.2.1_Libs.library"/>
             <value n="isJDK" v="false"/>
          </hash>
       </list>
-      <hash n="internalDefinitions">
-         <list n="libraryDefinitions">
-            <hash>
-               <list n="classPath">
-                  <url path="resources/ojdbc6.jar" jar-entry=""/>
-               </list>
-               <value n="deployedByDefault" v="true"/>
-               <value n="description" v="Ojdbc6.jar"/>
-               <value n="id" v="Ojdbc6.jar"/>
-               <value n="locked" v="true"/>
-            </hash>
-            <hash>
-               <list n="classPath">
-                  <url path="resources/Helpers.jar" jar-entry=""/>
-               </list>
-               <value n="deployedByDefault" v="true"/>
-               <value n="description" v="Helpers.jar"/>
-               <value n="id" v="Helpers.jar"/>
-               <value n="locked" v="true"/>
-            </hash>
-            <hash>
-               <list n="classPath">
-                  <url path="resources/Csf.jar" jar-entry=""/>
-               </list>
-               <value n="deployedByDefault" v="true"/>
-               <value n="description" v="Csf.jar"/>
-               <value n="id" v="Csf.jar"/>
-               <value n="locked" v="true"/>
-            </hash>
-            <hash>
-               <list n="classPath">
-                  <url path="../../../tools/Oracle/JDev7/modules/com.oracle.jps-api_1.0.0.0.jar" jar-entry=""/>
-               </list>
-               <value n="deployedByDefault" v="true"/>
-               <value n="description" v="Com.oracle.jps-api_1.0.0.0.jar"/>
-               <value n="id" v="Com.oracle.jps-api_1.0.0.0.jar"/>
-               <value n="locked" v="true"/>
-            </hash>
-         </list>
-      </hash>
       <list n="libraryReferences">
          <hash>
-            <value n="id" v="Ojdbc6.jar"/>
-            <value n="isJDK" v="false"/>
-         </hash>
-         <hash>
-            <url n="id" path="../../../tools/Oracle/OIM_HOME/client/OIM Client.library"/>
-            <value n="isJDK" v="false"/>
-         </hash>
-         <hash>
-            <value n="id" v="Helpers.jar"/>
-            <value n="isJDK" v="false"/>
-         </hash>
-         <hash>
-            <value n="id" v="Csf.jar"/>
-            <value n="isJDK" v="false"/>
-         </hash>
-         <hash>
-            <value n="id" v="Com.oracle.jps-api_1.0.0.0.jar"/>
-            <value n="isJDK" v="false"/>
-         </hash>
-         <hash>
-            <value n="id" v="SOA Workflow"/>
-            <value n="isJDK" v="false"/>
-         </hash>
-         <hash>
-            <value n="id" v="SOA Designtime"/>
+            <url n="id" path="../../../AppData/Roaming/JDeveloper/system11.1.1.6.38.62.29/o.jdeveloper/OIM_11.1.2.1_Libs.library"/>
             <value n="isJDK" v="false"/>
          </hash>
       </list>

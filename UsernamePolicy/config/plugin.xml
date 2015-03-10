@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<oimplugins>
+    <plugins pluginpoint="oracle.iam.identity.usermgmt.api.UserNamePolicy">
+        <plugin pluginclass="com.icsynergy.AWSUsernamePolicy"
+                version="1.0.1" name="AWSUsernamePolicy"/>
+    </plugins>
+</oimplugins>

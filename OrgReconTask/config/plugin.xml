@@ -2,7 +2,7 @@
 <oimplugins xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <plugins pluginpoint="oracle.iam.scheduler.vo.TaskSupport">
     <plugin pluginclass="com.icsynergy.awsproject.OrgReconTask"
-            version="0.11.0" name="OrgReconTask"></plugin>
+            version="0.11.1" name="OrgReconTask"></plugin>
     <plugin pluginclass="com.icsynergy.awsproject.OrgIDAdjuster"
             version="0.10.1" name="OrgIDAdjuster"></plugin>
     <plugin pluginclass="com.icsynergy.awsproject.UserUDFSetterTask"
@@ -12,6 +12,6 @@
     <plugin pluginclass="com.icsynergy.awsproject.expireCustomActionWithNotification"
             version="0.0.1" name="expireCustomActionWithNotification"></plugin>
     <plugin pluginclass="com.icsynergy.awsproject.AssignManagerFromWFApprovalTask"
-            version="0.0.2" name="AssignManagerFromWFApprovalTask"></plugin>
+            version="0.0.3" name="AssignManagerFromWFApprovalTask"></plugin>
   </plugins>
 </oimplugins>
