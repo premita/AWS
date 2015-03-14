@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.faces.application.FacesMessage;
@@ -75,8 +76,11 @@ public class OrgDeleteBean implements Serializable {
         fm.setSeverity(FacesMessage.SEVERITY_INFO);
       }
       } catch (Exception e) {
+        logger.log(Level.SEVERE, "Exception deleting organization " + strOrgName, e);
         fm = 
-          new FacesMessage("Exception deleting Organization: " + strOrgName);
+          new FacesMessage("<html><body><p>" + 
+                           "Exception deleting Organization: " + strOrgName + "</p>" +
+                           "<p>" + e.getMessage() + "</p></body><html>");
         fm.setSeverity(FacesMessage.SEVERITY_ERROR);
       }
 
@@ -225,6 +229,12 @@ public class OrgDeleteBean implements Serializable {
     } catch (NoSuchRoleException nsre) {
       logger.warning("Role: " + strOrgName + " Admin not found");
     }
+    
+    // clear membership rule
+    logger.finest("Clearing user membership rule...");
+    if (!"SUCCESS".equalsIgnoreCase(orgMgr.setUserMembershipRule(org.getEntityId(), null)))
+      throw new Exception("Can't clear organization membership rule");
+    logger.finest("Membership rule cleared");
     
     // delete the organization
     orgMgr.delete(strOrgName, true);

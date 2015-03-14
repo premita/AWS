@@ -155,11 +155,13 @@ public class NotifyUserIdToUser implements PostProcessHandler {
 			HashMap<String, Object> templateParams = new HashMap<String, Object>();
 			templateParams.put("usr_key", userKey);
 			event.setParams(templateParams);
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.out.println("e-------->" + e.getMessage());
-		}
-		return event;
+		} catch (AccessDeniedException 
+             | UserLookupException 
+             | NoSuchUserException e) {
+      e.printStackTrace();
+      System.out.println("e-------->" + e.getMessage());
+    }
+    return event;
 	}
 
 	private String[] getRecipientUserIds(String userKey)
