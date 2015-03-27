@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<eventhandlers xsi:schemaLocation="http://www.oracle.com/schema/oim/platform/kernel orchestration-handlers.xsd"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xmlns="http://www.oracle.com/schema/oim/platform/kernel">
+ <action-handler sync="FALSE" order="1002" name="OrgNameChangedHandler"
+                 operation="MODIFY" entity-type="Organization"
+                 class="com.icsynergy.processplugins.OrgNameChangedHandler"
+                 stage="postprocess"/>                         
+</eventhandlers>

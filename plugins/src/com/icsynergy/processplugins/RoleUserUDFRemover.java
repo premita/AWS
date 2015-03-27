@@ -58,8 +58,7 @@ public class RoleUserUDFRemover implements PostProcessHandler {
       arstrRoleKeys = (List<String>) map.get("roleKeys");
     }
 
-    logger.finest("Role Key: " + 
-                  arstrRoleKeys == null ? null : arstrRoleKeys.toString());
+    logger.finest("Role Key: " + arstrRoleKeys.toString());
     logger.finest("User Keys: " + lstUsrKeys.toString());
 
     RoleManager roleMgr = Platform.getService(RoleManager.class);
@@ -89,18 +88,25 @@ public class RoleUserUDFRemover implements PostProcessHandler {
       }
 
       String strGrpName = null, strGrpIDs = null;
-      String[] arstrGrpNames = new String[0], arstrGrpIDs = new String[0];
+
+      Set<String> setGrpNames = new HashSet<>();
+      Set<String> setGrpIDs = new HashSet<>();
       
       if (usr.getAttribute("AWSMgtGrpName") != null) {
         //split the string into an array of GrpNames
-        arstrGrpNames = 
-          usr.getAttribute("AWSMgtGrpName").toString().split("[,:]");
+        setGrpNames = 
+          new HashSet<>(Arrays.asList(usr
+                                      .getAttribute("AWSMgtGrpName")
+                                      .toString()
+                                      .split("[,:]")));
       }
 
       if (usr.getAttribute("AWSMgmtGrpIDs") != null) {
         //split the string into an array of GrpIDs
-        arstrGrpIDs = 
-          usr.getAttribute("AWSMgmtGrpIDs").toString().split("[,:]");
+        setGrpIDs = 
+          new HashSet<>(Arrays.asList(usr
+                                      .getAttribute("AWSMgmtGrpIDs")
+                                      .toString().split("[,:]")));
       }
       
       // get role name which is equal to org name and org desc
@@ -150,48 +156,21 @@ public class RoleUserUDFRemover implements PostProcessHandler {
           continue;
         }
         
-        // clean GrpName from array of GrpNames
-        if (arstrGrpNames.length > 0) {
-          //search array for a string and remove it from it
-          for (int i = 0; i < arstrGrpNames.length; i++) {
-            if (arstrGrpNames[i].equalsIgnoreCase(strRoleName)) {
-              arstrGrpNames[i] = arstrGrpNames[arstrGrpNames.length - 1];
-              arstrGrpNames = Arrays.copyOf(arstrGrpNames, arstrGrpNames.length - 1);
-              break;
-            }
-          }
-        } else {
-          logger.warning("User's AWSMgtGrpName attribute is already empty. " + 
-                         "Can't delete GrpName: " + strRoleName);
-        }
-
-        // clean GrpID from array of GrpIDs        
-        if (arstrGrpIDs.length > 0) {
-          //search array for a string and remove it from it
-          for (int i = 0; i < arstrGrpIDs.length; i++) {
-            if (arstrGrpIDs[i].equalsIgnoreCase(strRoleDesc)) {
-              arstrGrpIDs[i] = arstrGrpIDs[arstrGrpIDs.length - 1];
-              arstrGrpIDs = Arrays.copyOf(arstrGrpIDs, arstrGrpIDs.length - 1);
-              break;
-            }
-          }          
-        } else {
-          logger.warning("User's AWSMgmtGrpIDs attribute is already empty. " +
-                         "Can't delete GrpID:" + strRoleDesc);
-        }  
+        setGrpNames.remove(strRoleName);
+        setGrpIDs.remove(strRoleDesc);
       }
       
-      if (arstrGrpNames.length > 0) {
-        strGrpName = Arrays.toString(arstrGrpNames).replace(", ", ",")
-          .replaceAll("[\\[\\]]", "");
+      if (setGrpNames.size() > 0) {
+        strGrpName = 
+          setGrpNames.toString().replace(", ", ",").replaceAll("[\\[\\]]", "");
       } else {
         logger.warning("New GrpName is empty");
         strGrpName = null;          
       }
 
-      if (arstrGrpIDs.length > 0) {
-        strGrpIDs = Arrays.toString(arstrGrpIDs).replace(", ", ",")
-          .replaceAll("[\\[\\]]", "");
+      if (setGrpIDs.size() > 0) {
+        strGrpIDs = 
+          setGrpIDs.toString().replace(", ", ",").replaceAll("[\\[\\]]", "");
       } else {
         logger.warning("New GrpID is empty");
         strGrpIDs = null;
@@ -267,6 +246,7 @@ public class RoleUserUDFRemover implements PostProcessHandler {
 
   public BulkEventResult execute(long l, long l2,
                                  BulkOrchestration bulkOrchestration) {
+    logger.entering(TAG, "bulk execute");
     return new BulkEventResult();
   }
 
