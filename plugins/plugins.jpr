@@ -65,6 +65,15 @@
          <list n="constituent-sets">
             <hash>
                <list n="pattern-filters">
+                  <string v="+RoleDescriptionChangedHandlerPlugin.xml"/>
+                  <string v="+RoleDescriptionChangedHandler.xml"/>
+                  <string v="+Untitled1"/>
+                  <string v="+OrgNameChangedHandlerPlugin.xml"/>
+                  <string v="+OrgNameChangedHandler.xml"/>
+                  <string v="+OrgIDChangedHandlerPlugin.xml"/>
+                  <string v="+OrgIDChangedHandler.xml"/>
+                  <string v="+RevokeAWSAdminPlugin.xml"/>
+                  <string v="+RevokeAWSAdminEvent.xml"/>
                   <string v="+EventHandler.xml"/>
                   <string v="+plugin.xml"/>
                </list>

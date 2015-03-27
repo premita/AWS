@@ -22,6 +22,7 @@
       <hash><url n="URL" path="OrgReconTask/OrgReconTask.jpr"/></hash>
       <hash><url n="URL" path="plugins/plugins.jpr"/></hash>
       <hash><url n="URL" path="SelfRegistrationApprovalApp/SelfRegistrationApproval/SelfRegistrationApproval.jpr"/></hash>
+      <hash><url n="URL" path="test/test.jpr"/></hash>
       <hash><url n="URL" path="UsernamePolicy/UsernamePolicy.jpr"/></hash>
    </list>
 </jws:workspace>

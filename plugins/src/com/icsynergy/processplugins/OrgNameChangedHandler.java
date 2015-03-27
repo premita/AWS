@@ -34,6 +34,7 @@ public class OrgNameChangedHandler implements PostProcessHandler {
   public EventResult execute(long l, long l2, Orchestration orchestration) {
     final Logger logger = Logger.getLogger("com.icsynergy");
     final String TAG = OrgNameChangedHandler.class.getCanonicalName();
+    final String UDFGRPID = "grp_id";
 
     Map params = orchestration.getParameters();
     logger.entering(TAG, "execute", params);
@@ -110,16 +111,18 @@ public class OrgNameChangedHandler implements PostProcessHandler {
     
     // search for Admin role and changing it
     try {
-      Role role =
-          roleMgr.getDetails(RoleManagerConstants
-                         .RoleAttributeName.DISPLAY_NAME.getId()
-                         , strOldOrgName + " Admin", set);
+      String strOrgId = String.valueOf(oldOrg.getAttribute(UDFGRPID));
       
-      
+      HashMap<String,Object> mapToBe = new HashMap<>();
+      mapToBe.put(RoleManagerConstants.RoleAttributeName.DISPLAY_NAME.getId(),
+                  strOrgName + " Admin");
+      Role roleToBe = new Role(mapToBe);
+
       logger.finest("Changing admin role display name...");
-      Role roleToBe = new Role(role.getEntityId());
-      roleToBe.setDisplayName(strOrgName + " Admin");
-      roleMgr.modify(roleToBe);
+      roleMgr.modify(RoleManagerConstants 
+                      .RoleAttributeName.NAME.getId(), 
+                     "aws_delegated_admin_" + strOrgId,
+                     roleToBe);
       logger.fine("Role: " + strOldOrgName + " Admin has been changed to: " +
                     strOrgName + " Admin");
     } catch (NoSuchRoleException | 
