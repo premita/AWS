@@ -74,6 +74,8 @@
             </hash>
             <hash>
                <list n="pattern-filters">
+                  <string v="+OrgReconTaskPlugin.xml"/>
+                  <string v="+OrgReconTask.xml"/>
                   <string v="+plugin.xml"/>
                   <string v="+Task.xml"/>
                </list>

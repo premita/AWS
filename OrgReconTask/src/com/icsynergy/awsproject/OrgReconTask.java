@@ -22,16 +22,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import oracle.iam.identity.exception.NoSuchRoleException;
-import oracle.iam.identity.exception.NoSuchUserException;
 import oracle.iam.identity.exception.OrganizationManagerException;
 import oracle.iam.identity.exception.RoleAlreadyExistsException;
 import oracle.iam.identity.exception.RoleCreateException;
-import oracle.iam.identity.exception.RoleLookupException;
-import oracle.iam.identity.exception.RoleMemberException;
 import oracle.iam.identity.exception.RoleModifyException;
-import oracle.iam.identity.exception.RoleSearchException;
-import oracle.iam.identity.exception.SearchKeyNotUniqueException;
-import oracle.iam.identity.exception.UserModifyException;
 import oracle.iam.identity.exception.ValidationFailedException;
 import oracle.iam.identity.orgmgmt.api.OrganizationManager;
 import oracle.iam.identity.orgmgmt.api.OrganizationManagerConstants;
@@ -42,8 +36,14 @@ import oracle.iam.identity.rolemgmt.vo.Role;
 import oracle.iam.identity.rolemgmt.vo.RoleManagerResult;
 import oracle.iam.identity.usermgmt.api.UserManager;
 import oracle.iam.identity.usermgmt.api.UserManagerConstants;
-import oracle.iam.identity.usermgmt.vo.User;
 import oracle.iam.notification.api.NotificationService;
+import oracle.iam.notification.exception.EventException;
+import oracle.iam.notification.exception.MultipleTemplateException;
+import oracle.iam.notification.exception.NotificationException;
+import oracle.iam.notification.exception.NotificationResolverNotFoundException;
+import oracle.iam.notification.exception.TemplateNotFoundException;
+import oracle.iam.notification.exception.UnresolvedNotificationDataException;
+import oracle.iam.notification.exception.UserDetailsNotFoundException;
 import oracle.iam.notification.vo.NotificationEvent;
 import oracle.iam.platform.Platform;
 import oracle.iam.platform.authopss.api.PolicyConstants;
@@ -84,9 +84,6 @@ public class OrgReconTask extends TaskSupport {
   private static final String UDFPIN = "pin";
   private static final String UDFGRPID = "grp_id";
   
-  // User UDF
-  private static final String UDFGRPSID = "AWSMgmtGrpIDs";
-  
   // Services
 	private final UserManager usrMgr = Platform.getService(UserManager.class);
   private final OrganizationManager orgMgr = 
@@ -97,7 +94,8 @@ public class OrgReconTask extends TaskSupport {
 
   public void execute(HashMap hashMap) throws Exception {
     m_logger.entering(TAG, "execute", hashMap.toString());
-
+    
+    Random rand = new Random();
     JDBCHelper helper = null;
 
     String strITResName = SysConfigHelper.getPropValue(SYSVARCODE);
@@ -163,10 +161,6 @@ public class OrgReconTask extends TaskSupport {
     if (orgMgr == null)
       throw new Exception("Can't get Organization interface");
 
-    RoleManager roleMgr = Platform.getService(RoleManager.class);
-    if (roleMgr == null)
-      throw new Exception("Can't get role manager interface");
-
     EntityPublicationService srv =
       Platform.getService(EntityPublicationService.class);
     if (srv == null)
@@ -222,10 +216,10 @@ public class OrgReconTask extends TaskSupport {
           String strDuplicateNameOrgKey = 
             findOrgByName(rs.getString(MG));
           
-          // if found re-ID it
+          // if found rename it
           if (!strDuplicateNameOrgKey.isEmpty()
-          && !changeOrgID(strDuplicateNameOrgKey, new Random().nextInt())) {
-            m_logger.severe("Can't re-ID existing organization with the same name: "
+          && !changeOrgName(strDuplicateNameOrgKey)) {
+            m_logger.severe("Can't rename existing organization with the same name: "
                             + rs.getString(MG));
             break;
           }
@@ -340,23 +334,32 @@ public class OrgReconTask extends TaskSupport {
           boolean bChangeName = false;
           
           //if organization is not Active -> skip it
-          if (! OrganizationManagerConstants.AttributeValue 
-            .ORG_STATUS_ACTIVE.getId()
-            .equalsIgnoreCase(org
+          if (!String.valueOf(org 
                               .getAttribute(OrganizationManagerConstants 
-                                            .AttributeName.ORG_STATUS.getId())
-                              .toString())) 
+                                            .AttributeName.ORG_STATUS.getId()))
+              .equals(OrganizationManagerConstants.AttributeValue 
+                      .ORG_STATUS_ACTIVE.getId())) {
+            m_logger.info("Organization with id: " + rs.getString(MGID) +
+                          " exists in inactive state. Skipping...");
             break;
+          }
           
           // if organization name is different from the query 
           if (!org.getAttribute(OrganizationManagerConstants.
                                             AttributeName.ORG_NAME.getId()).toString().
               equalsIgnoreCase(rs.getString(MG))) {
-            
+            m_logger.finer("Organization name in OIM for grp_id: " + 
+                            rs.getString(MGID) + " is different from: " +
+                            rs.getString(MG));
             // re-id existing organization
-            if (!changeOrgID(org.getEntityId(), new Random().nextInt())) 
+            if (!changeOrgID(org.getEntityId(), rand.nextInt())) 
               m_logger.severe("Can't re-ID organization: " + listOrgs);
-            
+            m_logger.fine("Organization ID for " + 
+                          String
+                          .valueOf(org
+                                   .getAttribute(OrganizationManagerConstants
+                                                 .AttributeName.ORG_NAME.getId())) +
+                          " has been successfully changed");
             //reconciled org will be created on next task run
             break;
           }
@@ -695,33 +698,34 @@ public class OrgReconTask extends TaskSupport {
    * @return
    * @throws Exception
    */
-  private boolean sendOrgCreateNotification (String strOrgName) throws Exception {
+  private boolean sendOrgCreateNotification (String strOrgName) {
 		m_logger.entering(TAG, "sendOrgCreateNotification", strOrgName);
 		
-		boolean bRet = false;
 		LookupHelper helper = 
 			LookupHelper.getLookupHelper(CONFIGLOOKUP);
 		
-		if (helper == null)
-			throw new Exception("Can't get the configuration lookup");
+    if (helper == null) {
+      m_logger.severe("Can't get the configuration lookup");
+			return false;
+    }
 		
 		String strUsrLogin = 
 			helper.getLookupValueForEncoded(CONFIGORGCREATEUSERTONOTIFY);
-		if (strUsrLogin == null)
-			throw new Exception("User to notify on org creation is not set");
+    if (strUsrLogin == null) {
+			m_logger.severe("User to notify on org creation is not set");
+      return false;
+    }
 		m_logger.fine("User to notify: " + strUsrLogin);
 
-		// check if the user, specified in the lookup, exists in OIM
-		// if not an Exception is thrown
-		usrMgr.getDetails(strUsrLogin, null, true);
-		
-		String[] arTo = {strUsrLogin};
+    String[] arTo = {strUsrLogin};
 
 		String strTemplate = 
 			helper.getLookupValueForEncoded(CONFIGORGCREATETEMPLATE);
-		if (strTemplate == null || strTemplate.length() == 0)
-			throw new Exception("Notification template for organization creation " +
+    if (strTemplate == null || strTemplate.length() == 0) {
+			m_logger.severe("Notification template for organization creation " +
 				"is not set");
+      return false;
+    }
 		
 		NotificationEvent event = new NotificationEvent();
 		event.setTemplateName(strTemplate);
@@ -732,11 +736,23 @@ public class OrgReconTask extends TaskSupport {
 	  HashMap<String,Object> map = new HashMap<>();
 		map.put("org_name", strOrgName);
 		event.setParams(map);
-		
-		bRet = srvNotification.notify(event);
-		
-	  m_logger.exiting(TAG, "sendOrgCreateNotification", bRet);
-		return bRet;
+
+
+    try {
+      srvNotification.notify(event);
+    } catch (UserDetailsNotFoundException
+             | NotificationResolverNotFoundException
+             | NotificationException 
+             | MultipleTemplateException 
+             | TemplateNotFoundException 
+             | UnresolvedNotificationDataException 
+             | EventException e) {
+      m_logger.log(Level.SEVERE, "Exception sending notification", e);
+      return false;
+    }
+    
+    m_logger.exiting(TAG, "sendOrgCreateNotification");
+		return true;
 	}
   
   /** Searches for Organization by name
@@ -780,75 +796,9 @@ public class OrgReconTask extends TaskSupport {
    */
   private boolean changeOrgID(String strOrgKey, int iToID) {
     m_logger.entering(TAG, "changeOrgID", strOrgKey + ":" + iToID);
-    boolean bRet = false;
-    
-    Organization org = null;
-    try {
-      org = orgMgr.getDetails(strOrgKey, null, false);
-    } catch (OrganizationManagerException e) {
-      m_logger.log(Level.SEVERE, "Exception pulling org attributes");
-      return bRet;
-    }
-    
-    final String strOldGrpId = org.getAttribute(UDFGRPID).toString();
-    // find and change aws_admin role
-    SearchCriteria crit = 
-      new SearchCriteria(RoleManagerConstants.RoleAttributeName.NAME.getId(),
-                         "aws_delegated_admin_" + strOldGrpId, 
-                         SearchCriteria.Operator.EQUAL);
-    List<Role> lst = null;
-    try {
-      lst = roleMgr.search(crit, null, null);
-    } catch (RoleSearchException e) {
-      m_logger.log(Level.SEVERE, "Exception searching for a role", e);
-      return bRet;
-    }
-    
-    if (lst.size() == 1) {
-      Role role = new Role(lst.get(0).getEntityId());
-      role.setName("aws_delegated_admin_" + iToID);
-      try {
-        roleMgr.modify(role);
-        m_logger.info("admin role has been modified");
-      } catch (Exception e) {
-        m_logger.log(Level.SEVERE, "Can't change role name", e);
-        return bRet;
-      }
-    } else if (lst.size() == 0){
-      m_logger.warning("No aws_admin role found");
-    } else {
-      m_logger.severe("More than one admin role found!");
-    }
-
-    // find and change role with org name
-    crit = 
-      new SearchCriteria(RoleManagerConstants.RoleAttributeName.NAME.getId(),
-                         org.getAttribute(OrganizationManagerConstants.AttributeName.ORG_NAME.getId()).toString(), 
-                         SearchCriteria.Operator.EQUAL);
-    try {
-      lst = roleMgr.search(crit, null, null);
-    } catch (RoleSearchException e) {
-      m_logger.log(Level.SEVERE, "Exception searching for a role", e);
-    }
-    
-    if (lst.size() == 1) {
-      Role role = new Role(lst.get(0).getEntityId());
-      role.setDescription(Integer.toString(iToID));
-      try {
-        roleMgr.modify(role);
-        m_logger.info("Main role has been modified");
-      } catch (Exception e) {
-        m_logger.log(Level.SEVERE, "Can't change role name", e);
-      }
-    } else if (lst.size() == 0){
-      m_logger.warning("No role found with description = " + 
-                       org.getAttribute(UDFGRPID).toString());
-    } else {
-      m_logger.severe("More than one admin role found!");
-    }
 
     // change GRP_ID
-    org = new Organization(strOrgKey);
+    Organization org = new Organization(strOrgKey);
     org.setAttribute(UDFGRPID, iToID);
 
     try {
@@ -856,110 +806,61 @@ public class OrgReconTask extends TaskSupport {
       m_logger.info("Org ID has been successfully changed");
     } catch (OrganizationManagerException e) {
       m_logger.log(Level.SEVERE, "Exception modifying org", e);
+      return false;
     }
 
-    bRet = changeGrpIdUDF(strOrgKey, strOldGrpId, Integer.toString(iToID));
-    
-    m_logger.exiting(TAG, "changeOrgID", bRet);
-    return bRet;
+    m_logger.exiting(TAG, "changeOrgID");
+    return true;
   }
   
-  /**
-   * Changes users' MgmtGrpIds UDF according to a new Grp Id
-   * @param strOrgKey Organization where to find users for the change
-   * @param strOldGrpId Old Management Group ID
-   * @param strNewGrpId New Management Group ID
-   * @return
+  /** 
+   * Changes organization name roles related to the org 
+   * by appending a suffix to the end
+   * @param strOrgKey Organization key
+   * @return true if all changes were successful
    */
-  final boolean changeGrpIdUDF(String strOrgKey, String strOldGrpId, String strNewGrpId) {
-    m_logger.entering(TAG, "changeGrpIdUDF", 
-                      String.format("org: %s from_id: %s to_id: %s", 
-                                    strOrgKey, strOldGrpId, strNewGrpId));
-    boolean bRet = false;
+  private final boolean changeOrgName(String strOrgKey) {
+    m_logger.entering(TAG, "changeOrgName", strOrgKey);
     
-    // get organization name
+    String strSuffix = Integer.toString(new Random().nextInt());
+        
     Organization org;
     try {
-      org = orgMgr.getDetails(strOrgKey, null, null);
-    } catch (SearchKeyNotUniqueException | OrganizationManagerException e) {
-      m_logger.log(Level.SEVERE,
-                   "Exception searching for organization detail for org_key="
-                      + strOrgKey, e);
-      return bRet;
+      org = 
+        orgMgr
+        .getDetails(strOrgKey, 
+                    new HashSet<String>(Arrays
+                                        .asList(OrganizationManagerConstants 
+                                                .AttributeName.ORG_NAME.getId())), 
+                    false);
+    } catch (OrganizationManagerException e) {
+      m_logger.log(Level.SEVERE, "Exception pulling org attributes");
+      return false;
     }
     
-    // get Role id
-    Role role;
+    final String strOldOrgName = 
+      org
+      .getAttribute(OrganizationManagerConstants
+                    .AttributeName.ORG_NAME
+                    .getId())
+      .toString();
+
+    // Organization Name = OldName + Suffix
+    org = new Organization(strOrgKey);
+    org.setAttribute(OrganizationManagerConstants
+                     .AttributeName.ORG_NAME
+                     .getId(), 
+                     strOldOrgName + strSuffix);
+
     try {
-      role =
-          roleMgr.getDetails(RoleManagerConstants
-                         .RoleAttributeName.DISPLAY_NAME.getId(),
-                         org.getAttribute(OrganizationManagerConstants
-                                          .AttributeName.ORG_NAME
-                                          .getId()).toString(), null);
-    } catch (RoleLookupException 
-             | NoSuchRoleException 
-             | SearchKeyNotUniqueException e) {
-      m_logger.log(Level.SEVERE,
-                   "Exception searching for role with display name: "
-                      + org.getAttribute(OrganizationManagerConstants
-                                        .AttributeName.ORG_NAME
-                                        .getId()).toString(), e);
-      return bRet;
+      orgMgr.modify(org);
+      m_logger.info("Org name has been successfully changed");
+    } catch (OrganizationManagerException e) {
+      m_logger.log(Level.SEVERE, "Exception modifying org", e);
+      return false;
     }
     
-    // get a list of users with this role
-    List<User> lstUsers;
-    try {
-      lstUsers = roleMgr.getRoleMembers(role.getEntityId(), true);
-    } catch (RoleMemberException e) {
-      m_logger.log(Level.SEVERE, 
-                   "Exception searching for users with a role_key: "
-                   + role.getEntityId());
-      return bRet;
-    }
-    
-    // cycle through all the users and replace Old_Grp_Id with New_Grp_Id
-    // doesnt' check Group Name UDF
-    for (User usr : lstUsers) {
-      String str = usr.getAttribute(UDFGRPSID).toString();
-      String[] arIds = {""};
-      if (!str.isEmpty()) {
-        arIds = str.split(",");
-        
-        // search for Old Grp Id and replace it 
-        for (int i = 0; i < arIds.length; i++) {
-          if (arIds[i].equalsIgnoreCase(strOldGrpId)) {
-            arIds[i] = strNewGrpId;
-            break;
-          }
-        }
-      } else {
-        arIds[0] = strNewGrpId;
-      }
-      
-      // join array back into a string
-      str = 
-        Arrays.toString(arIds).replaceAll(", ", ",").replaceAll("[\\[\\]]", "");
-      m_logger.finest("Setting user's UDF to: " + str);
-      
-      // set user's attribute
-      User usrToBe = new User(usr.getEntityId());
-      usr.setAttribute(UDFGRPSID, str);
-      try {
-        usrMgr.modify(usrToBe);
-        m_logger.fine("Attribute " + UDFGRPSID + 
-                      " for user key: " + usr.getEntityId() +
-                      " successfully set to: " + str);
-      } catch (NoSuchUserException 
-               | UserModifyException 
-               | ValidationFailedException e) {
-        m_logger.log(Level.WARNING, "Exception setting " + UDFGRPSID 
-                                  +" attribute to: " + str, e);
-      }
-    }
-    
-    m_logger.exiting(TAG, "changeGrpIdUDF");
+    m_logger.exiting(TAG, "changeOrgName");
     return true;
   }
 
