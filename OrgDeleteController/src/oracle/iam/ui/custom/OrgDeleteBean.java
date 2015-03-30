@@ -6,18 +6,18 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.faces.application.FacesMessage;
 import javax.faces.component.UIComponent;
 import javax.faces.context.FacesContext;
+
 import javax.faces.event.ActionEvent;
 
 import oracle.adf.view.rich.component.rich.data.RichTable;
-
 import oracle.adf.view.rich.context.AdfFacesContext;
+import oracle.adf.view.rich.event.DialogEvent;
 
 import oracle.iam.identity.exception.NoSuchRoleException;
 import oracle.iam.identity.exception.OrganizationManagerException;
@@ -31,23 +31,25 @@ import oracle.iam.identity.usermgmt.api.UserManager;
 import oracle.iam.identity.usermgmt.vo.User;
 import oracle.iam.ui.platform.model.common.OIMClientFactory;
 
-import oracle.jbo.Row;
 import oracle.jbo.uicli.binding.JUCtrlHierNodeBinding;
 
 
 public class OrgDeleteBean implements Serializable {
-  @SuppressWarnings("compatibility:6714254320593631717")
-  private static final long serialVersionUID = 1L;
-
+  @SuppressWarnings("compatibility:-4547437263090366186")
+  private static final long serialVersionUID = 5588278241723978133L;
   private UIComponent parentPanel;
-  private Logger logger = Logger.getLogger("com.icsynergy");
   
   public OrgDeleteBean() {
     super();
   }
 
-  public void delete(ActionEvent ev) {
+  public void delete(DialogEvent ev) {
+    final Logger logger = Logger.getLogger("com.icsynergy");
     logger.entering(this.getClass().getCanonicalName(), "delete");
+    
+    if (ev.getOutcome().compareTo(DialogEvent.Outcome.no) == 0) {
+      return;
+    }
     
     FacesContext facesContext = FacesContext.getCurrentInstance();
 
@@ -56,31 +58,29 @@ public class OrgDeleteBean implements Serializable {
     Iterator selection = table.getSelectedRowKeys().iterator();
 
     while (selection.hasNext()) {
-      Object key = selection.next();
-      table.setRowKey(key);
-      Object o = table.getRowData();
-      JUCtrlHierNodeBinding rowData = (JUCtrlHierNodeBinding)o;
-      Row row = rowData.getRow();
-      String strOrgName = row.getAttribute("organizationName").toString();
+      table.setRowKey(selection.next());
+
+      JUCtrlHierNodeBinding rowData = (JUCtrlHierNodeBinding) table.getRowData();
+      
+      String strOrgName = String.valueOf(rowData.getRow().getAttribute("organizationName"));
     
       FacesMessage fm;
 
       try {
         if (!deleteOrganization(strOrgName)) {
-        fm =
-          new FacesMessage("Organization: " + strOrgName + " has not been deleted");
-        fm.setSeverity(FacesMessage.SEVERITY_WARN);
-      } else {
-        fm =
-          new FacesMessage("Organization: " + strOrgName + " has been deleted");
-        fm.setSeverity(FacesMessage.SEVERITY_INFO);
-      }
+          fm =
+            new FacesMessage("Organization: " + strOrgName + " has not been deleted");
+          fm.setSeverity(FacesMessage.SEVERITY_WARN);
+        } else {
+          fm =
+            new FacesMessage("Organization: " + strOrgName + " has been deleted");
+          fm.setSeverity(FacesMessage.SEVERITY_INFO);
+        }
       } catch (Exception e) {
         logger.log(Level.SEVERE, "Exception deleting organization " + strOrgName, e);
         fm = 
-          new FacesMessage("<html><body><p>" + 
-                           "Exception deleting Organization: " + strOrgName + "</p>" +
-                           "<p>" + e.getMessage() + "</p></body><html>");
+          new FacesMessage("Exception deleting Organization: " + strOrgName + 
+                           ". " + e.getMessage());
         fm.setSeverity(FacesMessage.SEVERITY_ERROR);
       }
 
@@ -94,6 +94,7 @@ public class OrgDeleteBean implements Serializable {
   }
 
   private boolean deleteOrganization(String strOrgName) throws Exception {
+    final Logger logger = Logger.getLogger("com.icsynergy");
     logger.entering(this.getClass().getCanonicalName(), 
                     "deleteOrganization", strOrgName);
     
@@ -141,7 +142,6 @@ public class OrgDeleteBean implements Serializable {
     }
     
     logger.finest("Getting Role Manager...");
-    // delete roles
     RoleManager roleMgr = OIMClientFactory.getRoleManager();
 
     Role role = null;
@@ -152,7 +152,8 @@ public class OrgDeleteBean implements Serializable {
     try {
       logger.finest("Getting Role details...");
       role =
-           roleMgr.getDetails(RoleManagerConstants.RoleAttributeName.DISPLAY_NAME.getId(),
+           roleMgr.getDetails(RoleManagerConstants
+                              .RoleAttributeName.DISPLAY_NAME.getId(),
                               strOrgName, null);
       lstUsr = 
         roleMgr
@@ -170,10 +171,13 @@ public class OrgDeleteBean implements Serializable {
         logger.finest("Set of user keys to revoke role from -> " 
                       + setUserKeys.toString());
       
-        if ("COMPLETED".equalsIgnoreCase(roleMgr
-                                         .revokeRoleGrant(role.getEntityId(), 
-                                                          setUserKeys).getStatus())) {
-          logger.finest("Role has been revoked from users: " + role.getDisplayName());
+        if ("COMPLETED"
+              .equalsIgnoreCase(roleMgr
+                                .revokeRoleGrant(role.getEntityId(), 
+                                                 setUserKeys)
+                                .getStatus())) {
+          logger.finest("Role has been revoked from users: " 
+                        + role.getDisplayName());
         }
       }
       // delete the role
@@ -195,8 +199,9 @@ public class OrgDeleteBean implements Serializable {
     try {
       logger.finest("Getting Role details...");
       role =
-        roleMgr.getDetails(RoleManagerConstants.RoleAttributeName.DISPLAY_NAME.getId(),
-                   strOrgName + " Admin", null);
+        roleMgr.getDetails(RoleManagerConstants
+                           .RoleAttributeName.DISPLAY_NAME.getId(), 
+                           strOrgName + " Admin", null);
       lstUsr = roleMgr.getRoleMembers(role.getEntityId(), true);
       logger.finest("List of users with role: " + role.getDisplayName() + " -> " +
                     lstUsr.toString());
@@ -211,17 +216,38 @@ public class OrgDeleteBean implements Serializable {
         logger.finest("Set of user keys to revoke role from -> " +
                       setUserKeys.toString());
 
-        if ("COMPLETED".equalsIgnoreCase(roleMgr.revokeRoleGrant(role.getEntityId(),
-                                                                 setUserKeys).getStatus())) {
+        if ("COMPLETED".equalsIgnoreCase(roleMgr
+                                         .revokeRoleGrant(role.getEntityId(), 
+                                                          setUserKeys)
+                                         .getStatus())) {
           logger.finest("Role has been revoked from users: " +
                         role.getDisplayName());
         }
       }
 
-      // delete the role
-      if ("COMPLETED".equalsIgnoreCase(roleMgr.delete(RoleManagerConstants.RoleAttributeName.DISPLAY_NAME.getId(),
-                                                      strOrgName +
-                                                      " Admin").getStatus())) {
+      // delete hierarchy for AWS Admin role
+      logger.finest("Removing role hierarchy relationship...");
+      if (roleMgr
+          .removeRoleRelationship(RoleManagerConstants
+                                .RoleAttributeName.NAME.getId(), 
+                                "aws_delegated_admin_parent",
+                                RoleManagerConstants
+                                .RoleAttributeName.DISPLAY_NAME.getId(), 
+                                strOrgName + " Admin")
+          .getStatus().equals("COMPLETED")) {
+        logger.finest("Role hierarchy has been successfully removed");
+      } else {
+        throw new Exception("Can't remove admin role relationship: " 
+                            + strOrgName + " Admin");
+      }
+
+      // delete the aws admin role
+      if ("COMPLETED".
+            equalsIgnoreCase(roleMgr 
+                             .delete(RoleManagerConstants
+                                     .RoleAttributeName.DISPLAY_NAME.getId(), 
+                                     strOrgName + " Admin")
+                             .getStatus())) {
         logger.finest("Role successfully deleted: " + strOrgName + " Admin");
       } else {
         throw new Exception("Can't delete role: " + strOrgName + " Admin");
@@ -232,7 +258,9 @@ public class OrgDeleteBean implements Serializable {
     
     // clear membership rule
     logger.finest("Clearing user membership rule...");
-    if (!"SUCCESS".equalsIgnoreCase(orgMgr.setUserMembershipRule(org.getEntityId(), null)))
+    if (!"SUCCESS"
+          .equalsIgnoreCase(orgMgr 
+                            .setUserMembershipRule(org.getEntityId(), null)))
       throw new Exception("Can't clear organization membership rule");
     logger.finest("Membership rule cleared");
     
