@@ -1,0 +1,8 @@
+SelfRegistrationApproval/SCA-INF/bpel
+SelfRegistrationApproval/SCA-INF/classes
+SelfRegistrationApproval/deploy
+OrgDeleteController/classes
+OrgReconTask/classes
+plugins/classes
+UsernamePolicy/classes
+.idea/workspace.xml
