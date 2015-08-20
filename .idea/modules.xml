@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/OrgCertifierChangedHandler/OrgCertifierChangedHandler.iml" filepath="$PROJECT_DIR$/OrgCertifierChangedHandler/OrgCertifierChangedHandler.iml" />
+      <module fileurl="file://$PROJECT_DIR$/OrgReconTask/OrgReconTask.iml" filepath="$PROJECT_DIR$/OrgReconTask/OrgReconTask.iml" />
+      <module fileurl="file://$PROJECT_DIR$/SetManagerHandler/SetManagerHandler.iml" filepath="$PROJECT_DIR$/SetManagerHandler/SetManagerHandler.iml" />
+      <module fileurl="file://$PROJECT_DIR$/aws.iml" filepath="$PROJECT_DIR$/aws.iml" />
+      <module fileurl="file://$PROJECT_DIR$/plugins/plugins.iml" filepath="$PROJECT_DIR$/plugins/plugins.iml" />
+      <module fileurl="file://$PROJECT_DIR$/utils/utils.iml" filepath="$PROJECT_DIR$/utils/utils.iml" />
+    </modules>
+  </component>
+</project>

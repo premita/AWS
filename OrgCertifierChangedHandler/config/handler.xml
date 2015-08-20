@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<eventhandlers
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.oracle.com/schema/oim/platform/kernel orchestration-handlers.xsd"
+        xmlns="http://www.oracle.com/schema/oim/platform/kernel">
+    <action-handler sync="TRUE" order="LAST" name="OrgCertifierChangedHandler"
+                 operation="MODIFY" entity-type="Organization"
+                 class="com.icsynergy.awsproject.handlers.OrgCertifierChangedHandler"
+                 stage="postprocess"/>                         
+</eventhandlers>

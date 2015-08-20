@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="Helpers">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/OrgReconTask/resources/Helpers.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
