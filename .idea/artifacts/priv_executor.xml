@@ -1,8 +1,0 @@
-<component name="ArtifactManager">
-  <artifact type="jar" name="priv_executor">
-    <output-path>$PROJECT_DIR$/out/artifacts/priv_executor</output-path>
-    <root id="archive" name="priv_executor.jar">
-      <element id="module-output" name="utils" />
-    </root>
-  </artifact>
-</component>

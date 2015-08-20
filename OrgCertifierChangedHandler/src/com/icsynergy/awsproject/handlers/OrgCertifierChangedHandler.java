@@ -56,8 +56,7 @@ public class OrgCertifierChangedHandler implements PostProcessHandler {
 
         log.finest("getting user manager service...");
         UserManager usrMgr =
-//                Platform.getServiceForEventHandlers(UserManager.class, orgKey, "ADMIN", null, null);
-                Platform.getService(UserManager.class);
+                Platform.getServiceForEventHandlers(UserManager.class, "Org Certifier Change: " + orgKey, "ADMIN", null, null);
 
         // search for all users in the org
         log.finest("setting criterias for a user search...");
@@ -87,29 +86,23 @@ public class OrgCertifierChangedHandler implements PostProcessHandler {
             throw new EventFailedException(e.getErrorCode(), e.getErrorData(), e.getCause());
         }
 
-        log.finest("prepping the list of user IDs to change");
         ArrayList<String> listIds = new ArrayList<>();
-
         for (User usr : lst) {
             listIds.add(usr.getEntityId());
         }
-        log.finest("List of user IDs to modify: " + listIds);
-        lst.clear();
+        log.finest("List of user IDs: " + listIds);
 
+        HashMap<String, Object> map =
+                new HashMap<String, Object>(
+                        Collections.singletonMap(
+                                UserManagerConstants.AttributeName.MANAGER_KEY.getName(),
+                                Long.valueOf(certifierKey)));
+
+        log.finest("modifying users...");
         try {
-            log.finest("modifying users...");
-
-            usrMgr.modify(
-                    listIds,
-                    new HashMap<String, Object>(
-                            Collections.singletonMap(
-                                    UserManagerConstants.AttributeName.MANAGER_KEY.getName(),
-                                    certifierKey)),
-                    false);
-
-            listIds.clear();
+            usrMgr.modify(listIds, map, false);
         } catch (NoSuchUserException | UserModifyException | ValidationFailedException e) {
-            log.log(Level.SEVERE, "Exception modifying user", e);
+            log.log(Level.SEVERE, "Exception modifying users", e);
             throw new EventFailedException(e.getMessage(), e.getErrorData(), e.getCause());
         }
 
