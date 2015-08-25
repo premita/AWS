@@ -5,6 +5,7 @@ import oracle.iam.identity.exception.UserModifyException;
 import oracle.iam.identity.exception.UserSearchException;
 import oracle.iam.identity.exception.ValidationFailedException;
 import oracle.iam.identity.orgmgmt.api.OrganizationManagerConstants;
+import oracle.iam.identity.orgmgmt.vo.Organization;
 import oracle.iam.identity.usermgmt.api.UserManager;
 import oracle.iam.identity.usermgmt.api.UserManagerConstants;
 import oracle.iam.identity.usermgmt.vo.User;
@@ -28,13 +29,24 @@ public class OrgCertifierChangedHandler implements PostProcessHandler {
         EventResult res = new EventResult();
 
         if (orchestration.getParameters().containsKey(
-                OrganizationManagerConstants.AttributeName.ORG_CERTIFIER_USER_KEY.getId()))
+                OrganizationManagerConstants.AttributeName.ORG_CERTIFIER_USER_KEY.getId())) {
+
+            // get old certifier login
+            Organization curOrg = (Organization) orchestration.getInterEventData().get("CURRENT_ORG");
+            Long oldCertKey =
+                    Long.valueOf(
+                            String.valueOf(
+                                    curOrg.getAttribute(
+                                            OrganizationManagerConstants.AttributeName.ORG_CERTIFIER_USER_KEY.getId())));
+
             res = ChangeOrgUsersManager(
                     orchestration.getTarget().getEntityId(),
+                    oldCertKey,
                     String.valueOf(orchestration.getParameters().get(
                                     OrganizationManagerConstants.AttributeName.ORG_CERTIFIER_USER_KEY.getId())
                     )
             );
+        }
 
         logger.exiting(getClass().getCanonicalName(), "execute", res);
         return res;
@@ -43,11 +55,12 @@ public class OrgCertifierChangedHandler implements PostProcessHandler {
     /**
      * Changes a manager for all user within the given organization
      * @param orgKey Organization key
-     * @param certifierKey User key to set as a manager
+     * @param oldCertifierKey old certifier key
+     * @param certifierKey new certifier key
      * @return EventResult
      * @throws EventFailedException
      */
-    private EventResult ChangeOrgUsersManager(String orgKey, String certifierKey) throws EventFailedException {
+    private EventResult ChangeOrgUsersManager(String orgKey, Long oldCertifierKey, String certifierKey) throws EventFailedException {
         Logger log = Logger.getLogger("com.icsynergy");
         log.entering(
                 this.getClass().getCanonicalName(), "ChangeOrgUsersManager",
@@ -58,7 +71,7 @@ public class OrgCertifierChangedHandler implements PostProcessHandler {
         UserManager usrMgr =
                 Platform.getServiceForEventHandlers(UserManager.class, "Org Certifier Change: " + orgKey, "ADMIN", null, null);
 
-        // search for all users in the org
+        // search for all active users in the org who have old certifier as a manager
         log.finest("setting criterias for a user search...");
         SearchCriteria critActive =
                 new SearchCriteria(
@@ -71,7 +84,14 @@ public class OrgCertifierChangedHandler implements PostProcessHandler {
                         orgKey,
                         SearchCriteria.Operator.EQUAL
                 );
-        SearchCriteria crit = new SearchCriteria(critActive, critOrg, SearchCriteria.Operator.AND);
+        SearchCriteria critOldMgr =
+                new SearchCriteria(
+                        UserManagerConstants.AttributeName.MANAGER_KEY.getName(),
+                        oldCertifierKey,
+                        SearchCriteria.Operator.EQUAL);
+
+        SearchCriteria critActiveInOrg = new SearchCriteria(critActive, critOrg, SearchCriteria.Operator.AND);
+        SearchCriteria crit = new SearchCriteria(critActiveInOrg, critOldMgr, SearchCriteria.Operator.AND);
 
         List<User> lst;
         log.finest("searching...");
@@ -80,7 +100,7 @@ public class OrgCertifierChangedHandler implements PostProcessHandler {
                     crit,
                     new HashSet<>(Collections.singleton(UserManagerConstants.AttributeName.USER_KEY.getId())),
                     null);
-            log.finest("List of users in given org: " + lst);
+            log.finest("List of active users in given org with an old manager: " + lst);
         } catch (UserSearchException e) {
             log.log(Level.SEVERE, "User search exception", e);
             throw new EventFailedException(e.getErrorCode(), e.getErrorData(), e.getCause());
@@ -130,6 +150,5 @@ public class OrgCertifierChangedHandler implements PostProcessHandler {
 
     @Override
     public void initialize(HashMap<String, String> hashMap) {
-
     }
 }
