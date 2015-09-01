@@ -1,6 +1,7 @@
 package com.icsynergy.processplugins;
 
 import com.icsynergy.helpers.csf.CsfAccessor;
+import oracle.bpel.services.workflow.WorkflowException;
 import oracle.bpel.services.workflow.client.IWorkflowServiceClient;
 import oracle.bpel.services.workflow.client.IWorkflowServiceClientConstants;
 import oracle.bpel.services.workflow.client.WorkflowServiceClientFactory;
@@ -11,6 +12,7 @@ import oracle.bpel.services.workflow.repos.TableConstants;
 import oracle.bpel.services.workflow.task.model.Task;
 import oracle.bpel.services.workflow.verification.IWorkflowContext;
 import oracle.iam.conf.api.SystemConfigurationService;
+import oracle.iam.conf.exception.SystemConfigurationServiceException;
 import oracle.iam.identity.exception.*;
 import oracle.iam.identity.orgmgmt.api.OrganizationManager;
 import oracle.iam.identity.orgmgmt.api.OrganizationManagerConstants;
@@ -31,9 +33,11 @@ import oracle.iam.platform.kernel.spi.PostProcessHandler;
 import oracle.iam.platform.kernel.vo.*;
 import oracle.security.jps.service.credstore.PasswordCredential;
 
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
+import javax.management.*;
 import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.security.auth.login.LoginException;
+import java.io.InvalidObjectException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -44,24 +48,28 @@ public class SetManagerHandler implements PostProcessHandler {
 
     private ITaskQueryService querySvc = null;
     private IWorkflowContext wfCtx = null;
-    private OIMClient oimClient = null;
 
     Logger log = Logger.getLogger("com.icsynergy");
 
+    @SuppressWarnings("unchecked")
     @Override
     public EventResult execute(long l, long l1, Orchestration orchestration) {
         log.finest(">> execute");
 
-        if (querySvc == null) {
+        if (ContextManager.getContextType().toString().equals("REQUEST")) {
+            OIMClient oimClient;
+
             log.finest("initializing...");
             init();
-        }
 
-        if (ContextManager.getContextType().toString().equals("REQUEST")) {
             log.finest("context is request");
 
-            HashMap<String, ContextAware> reqData =
-                    (HashMap<String, ContextAware>) ContextManager.getValue("requestData", true);
+            HashMap<String, ContextAware> reqData;
+            if (ContextManager.getValue("requestData", true) instanceof HashMap) {
+                reqData = (HashMap<String, ContextAware>) ContextManager.getValue("requestData", true);
+            } else {
+                throw new EventFailedException("request data is not a hashmap", null, new InvalidObjectException("not a hash map"));
+            }
 
             String reqId = (String) reqData.get("requestId").getObjectValue();
             log.finest("Request Id: " + reqId);
@@ -89,10 +97,10 @@ public class SetManagerHandler implements PostProcessHandler {
                 throw new EventFailedException(e.getMessage(), e.getErrorData(), e);
             }
 
-            log.finest("checking if approver has the role of default delegated admin");
             try {
                 String orgCertifierKey = approver.getEntityId();
 
+                log.finest("checking if approver has the role of default delegated admin");
                 if (roleMgr.isRoleGranted(adminRole.getEntityId(), approver.getEntityId(), true)) {
                     log.finest("approver has the role, need to set user\'s manager to org certifier");
 
@@ -121,22 +129,31 @@ public class SetManagerHandler implements PostProcessHandler {
                     log.finest("pushing new context");
                     ContextManager.pushContext(reqId, ContextManager.ContextTypes.ADMIN, "MODIFY");
 
+                    oimClient = getOIMClient();
                     log.finest("modifying user with user");
-                    UserManagerResult result = getOIMClient().getService(UserManager.class).modify(updatedUser);
+                    UserManagerResult result = oimClient.getService(UserManager.class).modify(updatedUser);
 
                     if (result.getSucceededResults().contains(updatedUser.getEntityId())) {
                         log.info("User is successfully updated");
                     }
                 } catch (UserModifyException | ValidationFailedException e) {
                     log.log(Level.SEVERE, "Exception", e);
-                    throw new EventFailedException(e.getMessage(), e.getErrorData(), e);
+                    throw new EventFailedException(e.getMessage(), e.getErrorData(), e.getCause());
                 } finally {
                     log.finest("popping old context");
                     ContextManager.popContext();
                 }
             } catch (OrganizationManagerException | UserLookupException | NoSuchUserException | UserMembershipException e) {
                 log.log(Level.SEVERE, "Exception", e);
-                throw new EventFailedException(e.getMessage(), e.getErrorData(), e);
+                throw new EventFailedException(e.getMessage(), e.getErrorData(), e.getCause());
+            }
+
+            log.finest("releasing resources");
+            try {
+                querySvc.destroyWorkflowContext(wfCtx);
+                oimClient.logout();
+            } catch (WorkflowException e) {
+                log.log(Level.SEVERE, "Exception destroying workflow context", e.getCause());
             }
         }
 
@@ -166,6 +183,7 @@ public class SetManagerHandler implements PostProcessHandler {
     private OIMClient getOIMClient() {
         log.finest(">> getOIMClient");
 
+        OIMClient oimClient;
         // log into the system
         try {
             log.finest("getting credentials");
@@ -180,7 +198,7 @@ public class SetManagerHandler implements PostProcessHandler {
             log.finest("url: " + strURL);
 
             log.finest("prepping environment");
-            Hashtable env = new Hashtable();
+            Hashtable<String, String> env = new Hashtable<>();
             env.put(OIMClient.JAVA_NAMING_FACTORY_INITIAL, "weblogic.jndi.WLInitialContextFactory");
             env.put(OIMClient.JAVA_NAMING_PROVIDER_URL, strURL);
 
@@ -190,16 +208,16 @@ public class SetManagerHandler implements PostProcessHandler {
             log.finest("Logging in...");
             oimClient.login(strOimUserName, strOimPassword.toCharArray());
             log.finest("Logged in");
-        } catch (Exception e) {
+        } catch (SystemConfigurationServiceException | LoginException e) {
             log.log(Level.SEVERE, "Can't log in", e);
+            throw new EventFailedException(e.getMessage(), e.getStackTrace(), e.getCause());
         }
-
 
         log.finest("<< getOIMClient");
         return oimClient;
     }
 
-    public void init() {
+    private void init() {
         try {
             log.finest(">> init");
 
@@ -234,10 +252,10 @@ public class SetManagerHandler implements PostProcessHandler {
             wfCtx = querySvc.authenticate(strSOAUserName, strSOAPassword.toCharArray(), "jazn.com");
 
             log.finest("<< init");
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
+        } catch (MalformedObjectNameException | WorkflowException | MBeanException  | AttributeNotFoundException
+                | ReflectionException |InstanceNotFoundException | NamingException e) {
             log.log(Level.SEVERE, "Exception!", e);
+            throw new EventFailedException(e.getMessage(), e.getStackTrace(), e.getCause());
         }
 
     }
@@ -254,6 +272,7 @@ public class SetManagerHandler implements PostProcessHandler {
         String strRet = "";
 
         try {
+
             log.finest("building predicate");
             // Build the predicate
             Predicate idPredicate = new Predicate(TableConstants.WFTASK_IDENTIFICATIONKEY_COLUMN, Predicate.OP_EQ, strReqId);
@@ -265,17 +284,20 @@ public class SetManagerHandler implements PostProcessHandler {
             Ordering ordering = new Ordering(TableConstants.WFTASK_TITLE_COLUMN, true, true);
             ordering.addClause(TableConstants.WFTASK_PRIORITY_COLUMN, true, true);
 
-            List queryColumns = new ArrayList();
+            List<String> queryColumns = new ArrayList<>();
             queryColumns.add("APPROVERS");
 
             log.finest("querying...");
-            List tasksList = querySvc.queryTasks(wfCtx, queryColumns, null, ITaskQueryService.AssignmentFilter.ALL, null, idPredicate, ordering, 0, 0);// No Paging
+            List<Task> tasksList =
+                    querySvc.queryTasks(
+                            wfCtx, queryColumns, null, ITaskQueryService.AssignmentFilter.ALL,
+                            null, idPredicate, ordering, 0, 0);// No Paging
 
             if (tasksList != null) {
                 if (tasksList.size() > 1) {
                     log.warning("More that one task found with ID: " + strReqId + "returning null...");
                 } else {
-                    Task task = (Task) tasksList.get(0);
+                    Task task = tasksList.get(0);
                     strRet = task.getSystemAttributes().getApprovers();
                     log.finest("Approvers: " + strRet);
                 }
@@ -283,11 +305,10 @@ public class SetManagerHandler implements PostProcessHandler {
             } else {
                 log.warning("No task found with ID: " + strReqId + " returning null...");
             }
-
-        } catch (Exception e) {
+        } catch (WorkflowException e) {
             log.log(Level.SEVERE, "Exception", e);
+            throw new EventFailedException(e.getMessage(), e.getErrorArgs(), e.getCause());
         }
-
 
         log.finest("<< getRequestApproverFromWF with " + strRet);
         return strRet;

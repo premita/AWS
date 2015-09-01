@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="Csf">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/plugins/resources/Csf.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>

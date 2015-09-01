@@ -5,4 +5,5 @@ OrgDeleteController/classes
 OrgReconTask/classes
 plugins/classes
 UsernamePolicy/classes
-.idea/workspace.xml
+.idea
+*.iml
