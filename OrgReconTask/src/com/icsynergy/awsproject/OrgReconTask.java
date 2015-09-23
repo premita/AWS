@@ -58,9 +58,14 @@ public class OrgReconTask extends TaskSupport {
     private static final String MG = "MANAGEMENT_GROUP";
     private static final String MGPIN = "MANAGEMENT_GROUP_PIN";
     private static final String MGID = "MANAGEMENT_GROUP_ID";
-    private static final String MGCERTIFIER = "MANAGEMENT_GROUP_CERTIFIER";
+    private static final String MGCERTIFIER = "SAP_SERV_EXEC_EMAIL";
+
+    //todo - remove max after data are clean
     private static final String strSQLTemplate =
-        "SELECT %s, %s, %s, %s FROM %s WHERE %s NOT IN (%s) GROUP BY %s, %s, %s, %s";
+//            "SELECT %s, %s, %s, %s FROM %s WHERE %s NOT IN (%s) GROUP BY %s, %s, %s, %s";
+        "SELECT %s, %s, %s, max(%s) as %s FROM %s " +
+                "WHERE %s NOT IN (%s) AND %s is not null " +
+                "GROUP BY %s, %s, %s";
 
     // system variable to read IT resource name containing DB connection params from
     private static final String SYSVARCODE = "AWS.DBITResName";
@@ -115,12 +120,15 @@ public class OrgReconTask extends TaskSupport {
         else
             strFilterList = "0";
 
+//        "SELECT %s, %s, %s, max(%s) FROM %s " +
+//                "WHERE %s NOT IN (%s) AND %s is not null" +
+//                "GROUP BY %s, %s, %s";
         // create final SQL statement
         String SQL =
                 String.format(
-                        strSQLTemplate, MG, MGPIN, MGID, MGCERTIFIER,
-                        strTableName, MGID, strFilterList,
-                        MG, MGPIN, MGID, MGCERTIFIER);
+                        strSQLTemplate, MG, MGPIN, MGID, MGCERTIFIER, MGCERTIFIER,
+                        strTableName, MGID, strFilterList, MGCERTIFIER,
+                        MG, MGPIN, MGID);
         m_logger.finest("SQL statement: " + SQL);
 
         ITResHelper itresHelper = new ITResHelper(strITResName);
@@ -177,6 +185,7 @@ public class OrgReconTask extends TaskSupport {
         String strTopOrgId = org.getEntityId();
 
         // get ID of Default Admin role
+        m_logger.finest("getting Default Admin role details");
         setAttrs.clear();
         setAttrs.add(RoleManagerConstants.RoleAttributeName.KEY.getId());
         Role roleDefaultAdmin = roleMgr.getDetails(
@@ -196,12 +205,17 @@ public class OrgReconTask extends TaskSupport {
                 if (! (rs.getString(MGCERTIFIER) == null || rs.getString(MGCERTIFIER).isEmpty()) ) {
                     // find certifier user in OIM
                     try {
-                        User usrCertifier = usrMgr.getDetails(rs.getString(MGCERTIFIER), null, true);
+                        String certifierEmail = rs.getString(MGCERTIFIER);
+                        String certifierLogin =
+                                certifierEmail.substring(0, certifierEmail.indexOf('@'));
 
+                        m_logger.finest("Certifier login: " + certifierLogin);
+
+                        User usrCertifier = usrMgr.getDetails(certifierLogin, null, true);
                         certUserKey = usrCertifier.getEntityId();
 
-                        m_logger.finest("Certifier login=" + rs.getString(MGCERTIFIER) + " key=" + certUserKey);
-                    } catch (SQLException | UserLookupException | AccessDeniedException | NoSuchUserException e) {
+                        m_logger.finest("Certifier login=" + certifierLogin + " key=" + certUserKey);
+                    } catch (UserLookupException | NoSuchUserException e) {
                         m_logger.warning("Organization certifier from the view doesn't exist in OIM: " + rs.getString(MGCERTIFIER));
                         certUserKey = "-1";
 
@@ -212,6 +226,9 @@ public class OrgReconTask extends TaskSupport {
                         if (!sendAdminNotification(strMessage)) {
                             m_logger.severe("Can't send admin notification");
                         }
+                    } catch (SQLException | AccessDeniedException e) {
+                        m_logger.severe("Exception performing organization certifier lookup");
+                        throw e;
                     }
                 }
 
