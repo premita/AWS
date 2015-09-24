@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<wsdl:definitions
+     name="CertificationCallbackService"
+     targetNamespace="http://ws.certification.iam.oracle/"
+     xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+     xmlns:tns="http://ws.certification.iam.oracle/"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+     xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/"
+     xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+     xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/"
+    >
+    <wsdl:types>
+        <schema xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="http://ws.certification.iam.oracle/"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://ws.certification.iam.oracle/">
+            <xsd:complexType name="taskExpire">
+                <xsd:sequence>
+                    <xsd:element name="arg0" type="xsd:string"/>
+                    <xsd:element name="arg1" type="xsd:string"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:element name="taskExpire" type="tns:taskExpire"/>
+            <xsd:complexType name="taskExpireResponse">
+                <xsd:sequence/>
+            </xsd:complexType>
+            <xsd:element name="taskExpireResponse" type="tns:taskExpireResponse"/>
+            <xsd:complexType name="taskReassign">
+                <xsd:sequence>
+                    <xsd:element name="arg0" type="xsd:string"/>
+                    <xsd:element name="arg1" type="xsd:string"/>
+                    <xsd:element name="arg2" type="xsd:string"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:element name="taskReassign" type="tns:taskReassign"/>
+            <xsd:complexType name="taskReassignResponse">
+                <xsd:sequence/>
+            </xsd:complexType>
+            <xsd:element name="taskReassignResponse" type="tns:taskReassignResponse"/>
+            <xsd:complexType name="taskProxy">
+                <xsd:sequence>
+                    <xsd:element name="arg0" type="xsd:string"/>
+                    <xsd:element name="arg1" type="xsd:string"/>
+                    <xsd:element name="arg2" type="xsd:string"/>
+                    <xsd:element name="arg3" type="xsd:string"/>
+                    <xsd:element name="arg4" type="xsd:string"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:element name="taskProxy" type="tns:taskProxy"/>
+            <xsd:complexType name="taskProxyResponse">
+                <xsd:sequence/>
+            </xsd:complexType>
+            <xsd:element name="taskProxyResponse" type="tns:taskProxyResponse"/>
+        </schema>
+        <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+            <xsd:import namespace="http://www.w3.org/2005/08/addressing" schemaLocation="xsd/wsaddr.xsd"/>
+        </xsd:schema>
+
+    </wsdl:types>
+    <wsdl:message name="taskExpireInput">
+        <wsdl:part name="parameters" element="tns:taskExpire"/>
+    </wsdl:message>
+    <wsdl:message name="taskExpireOutput">
+        <wsdl:part name="parameters" element="tns:taskExpireResponse"/>
+    </wsdl:message>
+    <wsdl:message name="taskReassignInput">
+        <wsdl:part name="parameters" element="tns:taskReassign"/>
+    </wsdl:message>
+    <wsdl:message name="taskReassignOutput">
+        <wsdl:part name="parameters" element="tns:taskReassignResponse"/>
+    </wsdl:message>
+    <wsdl:message name="taskProxyInput">
+        <wsdl:part name="parameters" element="tns:taskProxy"/>
+    </wsdl:message>
+    <wsdl:message name="taskProxyOutput">
+        <wsdl:part name="parameters" element="tns:taskProxyResponse"/>
+    </wsdl:message>
+    <wsdl:portType name="CertificationCallback">
+        <wsdl:operation name="taskExpire">
+            <wsdl:input message="tns:taskExpireInput" xmlns:ns1="http://www.w3.org/2006/05/addressing/wsdl"
+                 ns1:Action=""/>
+            <wsdl:output message="tns:taskExpireOutput" xmlns:ns1="http://www.w3.org/2006/05/addressing/wsdl"
+                 ns1:Action=""/>
+        </wsdl:operation>
+        <wsdl:operation name="taskReassign">
+            <wsdl:input message="tns:taskReassignInput" xmlns:ns1="http://www.w3.org/2006/05/addressing/wsdl"
+                 ns1:Action=""/>
+            <wsdl:output message="tns:taskReassignOutput" xmlns:ns1="http://www.w3.org/2006/05/addressing/wsdl"
+                 ns1:Action=""/>
+        </wsdl:operation>
+        <wsdl:operation name="taskProxy">
+            <wsdl:input message="tns:taskProxyInput" xmlns:ns1="http://www.w3.org/2006/05/addressing/wsdl"
+                 ns1:Action=""/>
+            <wsdl:output message="tns:taskProxyOutput" xmlns:ns1="http://www.w3.org/2006/05/addressing/wsdl"
+                 ns1:Action=""/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="CertificationCallbackSoapHttp" type="tns:CertificationCallback">
+        <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="taskExpire">
+            <soap:operation soapAction=""/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="taskReassign">
+            <soap:operation soapAction=""/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="taskProxy">
+            <soap:operation soapAction=""/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="CertificationCallbackService">
+        <wsdl:port name="CertificationCallbackPort" binding="tns:CertificationCallbackSoapHttp">
+            <soap:address location="REPLACE_WITH_ACTUAL_URL"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>

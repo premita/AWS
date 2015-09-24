@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SOAConfigPlan xmlns:jca="http://platform.integration.oracle/blocks/adapter/fw/metadata" xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:orawsp="http://schemas.oracle.com/ws/2006/01/policy" xmlns:edl="http://schemas.oracle.com/events/edl" xmlns="http://schemas.oracle.com/soa/configplan">
+   <composite name="CertificationProcess">
+      <component name="CertificationProcess">
+         <property name="bpel.preference.oimServerUrl">
+            <replace>@oimT3URL</replace>
+         </property>
+      </component>
+   </composite>
+   <wsdlAndSchema name="xsd/CertificationTaskWorkflowTask.xsd|xsd/CertificationProcess.xsd|xsd/CertificationTaskPayload.xsd|xsd/TaskStateMachine.xsd|CertificationProcess.wsdl">
+      <searchReplace>
+         <search/>
+         <replace/>
+      </searchReplace>
+   </wsdlAndSchema>
+</SOAConfigPlan>

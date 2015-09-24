@@ -1,0 +1,169 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<taskDefinition targetNamespace="http://xmlns.oracle.com/CertificationProcess/CertificationTask" xmlns:xp20="http://www.oracle.com/XSL/Transform/java/oracle.tip.pc.services.functions.Xpath20" xmlns:ora="http://schemas.oracle.com/xpath/extension" xmlns:oraext="http://www.oracle.com/XSL/Transform/java/oracle.tip.pc.services.functions.ExtFunc" xmlns:task="http://xmlns.oracle.com/bpel/workflow/task" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://xmlns.oracle.com/bpel/workflow/taskDefinition"
+                xmlns:bpel2="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+                xmlns:ns0="http://xmlns.oracle.com/bpel/workflow/common"
+                xmlns:dvm="http://www.oracle.com/XSL/Transform/java/oracle.tip.dvm.LookupValue"
+                xmlns:evidence="http://xmlns.oracle.com/bpel/workflow/TaskEvidenceService"
+                xmlns:hwf="http://xmlns.oracle.com/bpel/workflow/xpath"
+                xmlns:ids="http://xmlns.oracle.com/bpel/services/IdentityService/xpath"
+                xmlns:bpm="http://xmlns.oracle.com/bpmn20/extensions"
+                xmlns:xref="http://www.oracle.com/XSL/Transform/java/oracle.tip.xref.xpath.XRefXPathFunctions"
+                xmlns:ns1="http://xmlns.oracle.com/CertificationAssignment/CertificationProcess/CertificationProcess">
+   <name>CertificationTask</name>
+   <id>${domain_id}_${process_id}_${process_revision}_CertificationTask</id>
+   <title type="XPATH"><value>/task:task/task:payload/task:certificationName</value></title>
+   <priority>3</priority>
+   <process processId="" processVersion=""/>
+   <routingSlip xmlns="http://xmlns.oracle.com/bpel/workflow/routingSlip">
+      <globalConfiguration>
+         <applicationContext></applicationContext>
+         <taskOwner type="STATIC" identityType="group">SYSTEM ADMINISTRATORS</taskOwner>
+         <sharePayloadConfiguration>
+            <type>USE_SYSTEM_WIDE_GLOBAL_CONFIGURATION</type>
+         </sharePayloadConfiguration>
+      </globalConfiguration>
+      <participants isAdhocRoutingSupported="false">
+         <stage name="Stage1">
+            <participant name="Stage1.Participant1">
+               <resource type="XPATH" identityType="user">/task:task/task:payload/task:reviewer</resource>
+            </participant>
+         </stage>
+      </participants>
+      <notification includeTaskAttachments="false" actionable="false"
+                    secureNotifications="false"
+                    oneNotificationPerUserPerAction="false"
+                    hideWorklistUrlInEmail="true">
+         <reminder relativeDate="ASSIGNED" reminderDuration="P1D"
+                   recurrence="2"/>
+         <action name="ASSIGN" recipient="ASSIGNEES"><![CDATA[concat(string('<html><head></head><body>
+    <img src="https://wsp.wayport.net/images/ATT_Wi-Fi_Solutions.png" alt="AT&amp;T"></img>
+<div style="line-height:17px;">
+<font style="font-family: Calibri,Verdana, Arial, Helvetica, sans-serif;font-size: 11px">
+	<p>'), ids:getUserProperty(/task:task/task:systemAttributes/task:assigneeUsers/task:id,'displayName'), string(',</p>
+	<p>
+		Certification named '), /task:task/task:title, string(' has been created and requires your attention. Please login to the Access Review Tool to complete this certification.
+	</p>
+	For any issues, please contact the Delegated Administrator for your Organization, or Account Management at <a href="mailto:DL-SvcMgmtWiFiD@att.com">DL-SvcMgmtWiFiD@att.com</a>
+	<p>
+	Your AT&amp;T Wi-Fi Solutions Compliance Administrator<br>
+	<center>&copy; 2015 AT&amp;T Intellectual Property.  All rights reserved.  AT&amp;T, the AT&amp;T logo and all other AT&amp;T marks contained herein are trademarks of AT&amp;T Intellectual Property and/or AT&amp;T affiliated companies.</center>
+	<br><center><font style="color:#c4bc96;font-size:90%">Please do not reply to this message; this mailbox is not monitored.</font></center>
+</p>
+</font>
+</div>
+</body>
+</html>'))]]></action>
+         <action name="COMPLETE" recipient="ASSIGNEES"><![CDATA[concat(string('Hello '), ids:getUserProperty(/task:task/task:systemAttributes/task:assigneeUsers/task:id,'displayName'), string(',
+<br>
+<p>
+Certification named  '), /task:task/task:title, string(' has been completed.
+
+</p>
+<br>
+<br>
+Thank You,
+<br>
+Compliance Administrator'))]]></action>
+         <preferenceParameters>
+            <parameter name="Date" type="STATIC"></parameter>
+         </preferenceParameters>
+         <groupNotificationConfiguration>SEND_INDIVIDUAL_NOTIFICATION</groupNotificationConfiguration>
+      </notification>
+   </routingSlip>
+   <workflowConfiguration xmlns="http://xmlns.oracle.com/bpel/workflow/configuration"
+                          xmlns:ns0="http://xmlns.oracle.com/CertificationAssignment/CertificationProcess/CertificationProcess"
+                          xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                          xmlns:ns1="http://xmlns.oracle.com/CertificationAssignment/CertificationProcess/CertificationProcess">
+      <outcomes>
+         <outcome>Sign Off</outcome>
+      </outcomes>
+      <payload xmlSchemaDefinition="xsd/CertificationTaskPayload.xsd"
+               externalSchema="false">
+         <messageAttribute name="process" attributeType="ELEMENT"
+                           type="ns0:process" updatable="false"
+                           external="false"/>
+         <messageAttribute name="certificationName" attributeType="SIMPLE_TYPE"
+                           type="xsd:string" updatable="true" external="false"/>
+         <messageAttribute name="organization" attributeType="SIMPLE_TYPE"
+                           type="xsd:string" updatable="true" external="false"/>
+         <messageAttribute name="certificationType" attributeType="SIMPLE_TYPE"
+                           type="xsd:string" updatable="true" external="false"/>
+         <messageAttribute name="reviewer" attributeType="SIMPLE_TYPE"
+                           type="xsd:string" updatable="true" external="false"/>
+         <messageAttribute name="certificationId" attributeType="SIMPLE_TYPE"
+                           type="xsd:long" updatable="true" external="false"/>
+         <messageAttribute name="url" attributeType="SIMPLE_TYPE"
+                           type="xsd:string" updatable="false"
+                           external="false"/>
+      </payload>
+      <bpelEventListener>true</bpelEventListener>
+      <bpelNoCallbacks>false</bpelNoCallbacks>
+      <accessRules>
+         <actionRules>
+            <systemAction>DELETE</systemAction>
+            <roles>
+               <role privilege="PERMIT">CREATOR</role>
+               <role privilege="PERMIT">OWNER</role>
+               <role privilege="RESTRICT">APPROVERS</role>
+               <role privilege="RESTRICT">REVIEWERS</role>
+               <role privilege="RESTRICT">ADMIN</role>
+            </roles>
+         </actionRules>
+         <actionRules>
+            <systemAction>ESCALATE</systemAction>
+            <roles>
+               <role privilege="PERMIT">OWNER</role>
+               <role privilege="RESTRICT">APPROVERS</role>
+               <role privilege="RESTRICT">CREATOR</role>
+               <role privilege="RESTRICT">REVIEWERS</role>
+               <role privilege="RESTRICT">ADMIN</role>
+            </roles>
+         </actionRules>
+         <actionRules>
+            <systemAction>REASSIGN</systemAction>
+            <roles>
+               <role privilege="PERMIT">OWNER</role>
+               <role privilege="RESTRICT">APPROVERS</role>
+               <role privilege="RESTRICT">CREATOR</role>
+               <role privilege="RESTRICT">REVIEWERS</role>
+               <role privilege="RESTRICT">ADMIN</role>
+            </roles>
+         </actionRules>
+         <actionRules>
+            <systemAction>RELEASE</systemAction>
+            <roles>
+               <role privilege="PERMIT">OWNER</role>
+               <role privilege="RESTRICT">APPROVERS</role>
+               <role privilege="RESTRICT">CREATOR</role>
+               <role privilege="RESTRICT">REVIEWERS</role>
+               <role privilege="RESTRICT">ADMIN</role>
+            </roles>
+         </actionRules>
+         <actionRules>
+            <systemAction>SUSPEND</systemAction>
+            <roles>
+               <role privilege="PERMIT">OWNER</role>
+               <role privilege="RESTRICT">APPROVERS</role>
+               <role privilege="RESTRICT">CREATOR</role>
+               <role privilege="RESTRICT">REVIEWERS</role>
+               <role privilege="RESTRICT">ADMIN</role>
+            </roles>
+         </actionRules>
+      </accessRules>
+      <category type="STATIC"><value>certification</value></category>
+      <showCompleteGraphicalHistory>true</showCompleteGraphicalHistory>
+      <reevalTranslatablesOnUpdate>false</reevalTranslatablesOnUpdate>
+      <preActionMandatoryUserSteps>
+         <preActionMandatoryUserStep>
+            <userStep>VIEW_DETAILS</userStep>
+            <outcome></outcome>
+         </preActionMandatoryUserStep>
+      </preActionMandatoryUserSteps>
+      <allowInitiatorEditParticipants>false</allowInitiatorEditParticipants>
+      <allowParticipantsEditParticipants>false</allowParticipantsEditParticipants>
+      <globalCreationTask>false</globalCreationTask>
+      <workflowConditions/>
+      <taskSequenceTypes>FUTURE</taskSequenceTypes>
+      <taskSequenceTypes>AGGREGATE</taskSequenceTypes>
+   </workflowConfiguration>
+</taskDefinition>

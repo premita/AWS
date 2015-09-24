@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<faultPolicies xmlns="http://schemas.oracle.com/bpel/faultpolicy"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <faultPolicy version="0.0.1" id="CertificationFaults"
+ xmlns:env="http://schemas.xmlsoap.org/soap/envelope/"
+ xmlns:xs="http://www.w3.org/2001/XMLSchema"
+ xmlns="http://schemas.oracle.com/bpel/faultpolicy"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <Conditions>
+      <faultName xmlns:bpelx="http://schemas.oracle.com/bpel/extension"
+ name="bpelx:remoteFault">
+        <condition>
+          <action ref="ora-human-intervention"/>
+        </condition>
+      </faultName>
+    </Conditions>	
+    <Actions>
+      <Action id="ora-human-intervention">
+	<humanIntervention/>
+      </Action>      
+	<Action id="ora-retry">
+            <retry>
+                <retryCount>3</retryCount>
+                <retryInterval>600</retryInterval>
+                <retryFailureAction ref="ora-human-intervention"/>
+            </retry>
+	</Action>      
+    </Actions>
+  </faultPolicy>
+</faultPolicies>

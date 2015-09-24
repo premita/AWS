@@ -1,0 +1,15 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<schema targetNamespace="http://xmlns.oracle.com/bpel/workflow/task" xmlns:tns="http://xmlns.oracle.com/bpel/workflow/task" attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns="http://www.w3.org/2001/XMLSchema" xmlns:ns0="http://xmlns.oracle.com/CertificationAssignment/CertificationProcess/CertificationProcess" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+   <import namespace="http://xmlns.oracle.com/CertificationAssignment/CertificationProcess/CertificationProcess" schemaLocation="CertificationProcess.xsd"/>
+   <complexType name="CertificationTaskPayloadType">
+      <sequence>
+         <element ref="ns0:process"/>
+         <element name="certificationName" type="xsd:string"/>
+         <element name="organization" type="xsd:string"/>
+         <element name="certificationType" type="xsd:string"/>
+         <element name="reviewer" type="xsd:string"/>
+         <element name="certificationId" type="xsd:long"/>
+         <element name="url" type="xsd:string"/>
+      </sequence>
+   </complexType>
+</schema>

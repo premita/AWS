@@ -1,0 +1,1178 @@
+<?xml version = "1.0" encoding = "UTF-8" ?>
+<!--
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  Oracle JDeveloper BPEL Designer 
+  
+  Created: Wed Mar 14 10:53:19 PDT 2012
+  Author:  vvaikund
+  Type: BPEL 1.1 Process
+  Purpose: Asynchronous BPEL Process
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+-->
+<process name="CertificationProcess"
+         targetNamespace="http://xmlns.oracle.com/CertificationAssignment/CertificationProcess/CertificationProcess"
+         xmlns="http://schemas.xmlsoap.org/ws/2003/03/business-process/"
+         xmlns:client="http://xmlns.oracle.com/CertificationAssignment/CertificationProcess/CertificationProcess"
+         xmlns:ora="http://schemas.oracle.com/xpath/extension"
+         xmlns:bpelx="http://schemas.oracle.com/bpel/extension"
+         xmlns:bpws="http://schemas.xmlsoap.org/ws/2003/03/business-process/"
+         xmlns:bpel2="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+         xmlns:task="http://xmlns.oracle.com/bpel/workflow/task"
+         xmlns:taskservice="http://xmlns.oracle.com/bpel/workflow/taskService"
+         xmlns:wfcommon="http://xmlns.oracle.com/bpel/workflow/common"
+         xmlns:wf="http://schemas.oracle.com/bpel/extensions/workflow"
+         xmlns:xp20="http://www.oracle.com/XSL/Transform/java/oracle.tip.pc.services.functions.Xpath20"
+         xmlns:oraext="http://www.oracle.com/XSL/Transform/java/oracle.tip.pc.services.functions.ExtFunc"
+         xmlns:dvm="http://www.oracle.com/XSL/Transform/java/oracle.tip.dvm.LookupValue"
+         xmlns:hwf="http://xmlns.oracle.com/bpel/workflow/xpath"
+         xmlns:ids="http://xmlns.oracle.com/bpel/services/IdentityService/xpath"
+         xmlns:bpm="http://xmlns.oracle.com/bpmn20/extensions"
+         xmlns:xdk="http://schemas.oracle.com/bpel/extension/xpath/function/xdk"
+         xmlns:xref="http://www.oracle.com/XSL/Transform/java/oracle.tip.xref.xpath.XRefXPathFunctions"
+         xmlns:ldap="http://schemas.oracle.com/xpath/extension/ldap"
+         xmlns:ns4="http://www.w3.org/2005/08/addressing"         
+         xmlns:ns1="http://xmlns.oracle.com/bpel/workflow/TaskEvidenceService"
+         xmlns:ns2="http://ws.certification.iam.oracle/"
+         xmlns:ns3="http://xmlns.oracle.com/bpel/workflow/routingSlip"
+         xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+         xmlns:ns5="http://xmlns.oracle.com/ias/pcbpel/NotificationService"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+    <!-- 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        PARTNERLINKS                                                      
+        List of services participating in this BPEL process               
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    --> 
+    <partnerLinks>
+        <!-- 
+      The 'client' role represents the requester of this service. It is 
+      used for callback. The location and correlation information associated
+      with the client role are automatically set using WS-Addressing.
+    -->
+        <partnerLink name="CertificationTaskService" partnerLinkType="client:CertificationProcess" myRole="CertificationProcessProvider" partnerRole="CertificationProcessRequester"/>
+        <partnerLink name="CertificationTask.TaskService_1"
+                     partnerLinkType="taskservice:TaskService"
+                     partnerRole="TaskService"
+                     myRole="TaskServiceCallbackListener"/>
+        <partnerLink name="CertificationWSPartnerLink"
+                     partnerLinkType="ns2:CertificationCallback_PL"
+                     partnerRole="CertificationCallback_Role"/>
+        <partnerLink name="NotificationService1"
+                     partnerLinkType="ns5:NotificationServiceLink"
+                     partnerRole="NotificationServiceProvider"/>
+    </partnerLinks>
+
+    <!-- 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        VARIABLES                                                        
+        List of messages and XML documents used within this BPEL process 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    -->
+    <variables>
+        <!-- Reference to the message passed as input during initiation -->
+        <variable name="inputVariable" messageType="client:CertificationProcessRequestMessage"/>
+
+        <!-- Reference to the message that will be sent back to the requester during callback -->
+        <variable name="outputVariable" messageType="client:CertificationProcessResponseMessage"/>
+        <variable name="CertificationTask1_globalVariable"
+                  messageType="taskservice:taskMessage"/>
+        <variable name="CertificationTask2_globalVariable"
+                  messageType="taskservice:taskMessage"/>
+       <variable name="partnerLink" element="ns4:EndpointReference"/>
+        <variable name="InvokeExpiryCallback_taskExpire_InputVariable"
+                  messageType="ns2:taskExpireInput"/>
+        <variable name="InvokeExpiryCallback_taskExpire_OutputVariable"
+                  messageType="ns2:taskExpireOutput"/>
+        <variable name="InvokeEscalationCallback_taskReassign_InputVariable"
+                  messageType="ns2:taskReassignInput"/>
+        <variable name="InvokeEscalationCallback_taskReassign_OutputVariable"
+                  messageType="ns2:taskReassignOutput"/>
+        <variable name="InvokeProxyCallback_taskProxy_InputVariable"
+                  messageType="ns2:taskProxyInput"/>
+        <variable name="InvokeProxyCallback_taskProxy_OutputVariable"
+                  messageType="ns2:taskProxyOutput"/>
+        <variable name="InvokeReassignCallback_taskProxy_InputVariable"
+                  messageType="ns2:taskProxyInput"/>
+        <variable name="InvokeReassignCallback_taskProxy_OutputVariable"
+                  messageType="ns2:taskProxyOutput"/>
+        <variable name="InvokeProxyReAssignCallback_taskProxy_InputVariable"
+                  messageType="ns2:taskProxyInput"/>
+        <variable name="InvokeProxyReAssignCallback_taskProxy_OutputVariable"
+                  messageType="ns2:taskProxyOutput"/>
+        <variable name="bExpired" type="xsd:boolean"/>
+        <variable name="certifierFullName" type="xsd:string"/>
+        <variable name="managerFullName" type="xsd:string"/>
+    </variables>
+
+    <!-- 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+       ORCHESTRATION LOGIC                                               
+       Set of activities coordinating the flow of messages across the    
+       services integrated within this business process                  
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    -->
+    <sequence name="main">
+        <!-- Receive input from requestor. (Note: This maps to operation defined in CertificationProcess.wsdl) -->
+        <receive name="receiveInput" partnerLink="CertificationTaskService" portType="client:CertificationProcess" operation="process" variable="inputVariable" createInstance="yes"/>
+        <assign name="setExpiredFalse">
+            <copy>
+                <from expression="false()"/>
+                <to variable="bExpired"/>
+            </copy>
+        </assign>
+        <scope name="CertificationTask1"
+               xmlns:wf="http://schemas.oracle.com/bpel/extensions/workflow"
+               wf:key="CertificationTask1_globalVariable">
+            <bpelx:annotation>
+                <bpelx:pattern patternName="bpelx:workflow"></bpelx:pattern>
+                <bpelx:general>
+                    <bpelx:property name="userLabel">
+                        <![CDATA[CertificationTask1]]>
+                    </bpelx:property>
+                </bpelx:general>
+            </bpelx:annotation>
+            <variables>
+                <variable name="initiateTaskInput"
+                          messageType="taskservice:initiateTaskMessage"/>
+                <variable name="initiateTaskResponseMessage"
+                          messageType="taskservice:initiateTaskResponseMessage"/>
+                <variable name="workflowContext"
+                          element="wfcommon:workflowContext"/>
+                <variable name="taskUpdatedMessage"
+                          messageType="taskservice:taskUpdatedMessage"/>
+                <variable name="taskAssignedMessage"
+                          messageType="taskservice:taskAssignedMessage"/>
+                <variable name="subTaskUpdatedMessage"
+                          messageType="taskservice:subTaskUpdatedMessage"/>
+                <variable name="stageCompleteMessage"
+                          messageType="taskservice:stageCompleteMessage"/>
+            </variables>
+            <sequence>
+                <assign name="CertificationTask2_AssignTaskAttributes">
+                    <copy>
+                        <from expression="number(3)"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/taskservice:initiateTask/task:task/task:priority"/>
+                    </copy>
+                    <copy>
+                        <from expression="ora:getConversationId()"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/taskservice:initiateTask/task:task/task:identificationKey"/>
+                    </copy>
+                    <copy>
+                        <from><payload xmlns="http://xmlns.oracle.com/bpel/workflow/task">
+	<process xmlns="http://xmlns.oracle.com/CertificationAssignment/CertificationProcess/CertificationProcess"/> 
+ <certificationName xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+ <organization xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+ <certificationType xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+ <certificationId xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+ <reviewer xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+ <url xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+</payload></from>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/taskservice:initiateTask/task:task/task:payload"/>
+                    </copy>
+                    <copy>
+                        <from variable="inputVariable" part="payload"
+                              query="/client:process"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/taskservice:initiateTask/task:task/task:payload/client:process"/>
+                    </copy>
+                    <copy>
+                        <from variable="inputVariable" part="payload"
+                              query="/client:process/client:certificationName"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/taskservice:initiateTask/task:task/task:payload/task:certificationName"/>
+                    </copy>
+                    <copy>
+                        <from variable="inputVariable" part="payload"
+                              query="/client:process/client:organizationName"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/taskservice:initiateTask/task:task/task:payload/task:organization"/>
+                    </copy>
+                    <copy>
+                        <from variable="inputVariable" part="payload"
+                              query="/client:process/client:certificationType"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/taskservice:initiateTask/task:task/task:payload/task:certificationType"/>
+                    </copy>
+                    <copy>
+                        <from variable="inputVariable" part="payload"
+                              query="/client:process/client:certificationId"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/taskservice:initiateTask/task:task/task:payload/task:certificationId"/>
+                    </copy>
+                    <copy>
+                        <from variable="inputVariable" part="payload"
+                              query="/client:process/client:reviewer"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/taskservice:initiateTask/task:task/task:payload/task:reviewer"/>
+                    </copy>
+                    <copy>
+                        <from expression="ora:getPreference('oimServerUrl')"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/taskservice:initiateTask/task:task/task:payload/task:url"/>
+                    </copy>
+                </assign>
+                <invoke name="initiateTask_CertificationTask2"
+                        partnerLink="CertificationTask.TaskService_1"
+                        operation="initiateTask"
+                        portType="taskservice:TaskService"
+                        inputVariable="initiateTaskInput"
+                        outputVariable="initiateTaskResponseMessage"/>
+                <assign name="CertificationTask2_AssignWorkflowContext">
+                    <copy>
+                        <from variable="initiateTaskResponseMessage"
+                              part="payload"
+                              query="/taskservice:initiateTaskResponse/wfcommon:workflowContext"/>
+                        <to variable="workflowContext"
+                            query="/wfcommon:workflowContext"/>
+                    </copy>
+                    <copy>
+                        <from variable="initiateTaskResponseMessage"
+                              part="payload"
+                              query="/taskservice:initiateTaskResponse/task:task"/>
+                        <to variable="CertificationTask2_globalVariable"
+                            part="payload" query="/task:task"/>
+                    </copy>
+                </assign>
+                <assign name="AssignWSDLURL">
+                    <copy>
+                        <from><EndpointReference xmlns="http://www.w3.org/2005/08/addressing">
+    <Address/>
+</EndpointReference></from>
+                        <to variable="partnerLink"/>
+                    </copy>
+                    <copy>
+                        <from expression="concat(bpws:getVariableData('inputVariable','payload','/client:process/client:callbackURL'),'/CertificationCallbackService/CertificationCallbackService')"/>
+                        <to variable="partnerLink"
+                            query="/ns4:EndpointReference/ns4:Address"/>
+                    </copy>
+                    <copy>
+                        <from variable="partnerLink"/>
+                        <to partnerLink="CertificationWSPartnerLink"/>
+                    </copy>
+                </assign>
+                <while condition="bpws:getVariableData('CertificationTask2_globalVariable', 'payload', '/task:task/task:systemAttributes/task:state') != 'EXPIRED' and bpws:getVariableData('CertificationTask2_globalVariable', 'payload', '/task:task/task:systemAttributes/task:state') != 'COMPLETED' and bpws:getVariableData('CertificationTask2_globalVariable', 'payload', '/task:task/task:systemAttributes/task:state') != 'WITHDRAWN' and bpws:getVariableData('CertificationTask2_globalVariable', 'payload', '/task:task/task:systemAttributes/task:state') != 'STALE' and bpws:getVariableData('CertificationTask2_globalVariable', 'payload', '/task:task/task:systemAttributes/task:state') != 'ERRORED'"
+                       name="while">
+                    <pick name="receiveTaskUpdates_CertificationTask2">
+                        <onMessage operation="onTaskCompleted"
+                                   partnerLink="CertificationTask.TaskService_1"
+                                   portType="taskservice:TaskServiceCallback"
+                                   variable="CertificationTask2_globalVariable">
+                            <bpelx:annotation>
+                                <bpelx:pattern patternName="Task is completed"></bpelx:pattern>
+                            </bpelx:annotation>
+                            <sequence>
+                                <switch name="Switch1">
+                                    <case condition="bpws:getVariableData('CertificationTask2_globalVariable','payload','/task:task/task:systemAttributes/task:state')='EXPIRED'">
+                                        <bpelx:annotation>
+                                            <bpelx:pattern>TASK EXPIRED</bpelx:pattern>
+                                            <bpelx:general>
+                                                <bpelx:property name="userLabel">TASK EXPIRED<![CDATA[TASK EXPIRED]]></bpelx:property>
+                                            </bpelx:general>
+                                        </bpelx:annotation>
+                                        <sequence name="Sequence1">
+                                            <assign name="AssignExpiryInput">
+                                                <copy>
+                                                    <from expression="string(bpws:getVariableData('inputVariable','payload','/client:process/client:certificationId'))"/>
+                                                    <to variable="InvokeExpiryCallback_taskExpire_InputVariable"
+                                                        part="parameters"
+                                                        query="/ns2:taskExpire/arg0"/>
+                                                </copy>
+                                                <copy>
+                                                    <from variable="CertificationTask2_globalVariable"
+                                                          part="payload"
+                                                          query="/task:task/task:identificationKey"/>
+                                                    <to variable="InvokeExpiryCallback_taskExpire_InputVariable"
+                                                        part="parameters"
+                                                        query="/ns2:taskExpire/arg1"/>
+                                                </copy>
+                                            </assign>
+                                            <invoke name="InvokeExpiryCallback"
+                                                    inputVariable="InvokeExpiryCallback_taskExpire_InputVariable"
+                                                    outputVariable="InvokeExpiryCallback_taskExpire_OutputVariable"
+                                                    partnerLink="CertificationWSPartnerLink"
+                                                    portType="ns2:CertificationCallback"
+                                                    operation="taskExpire"
+                                                    bpelx:invokeAsDetail="no"/>
+                                            <assign name="setExpiredFlag">
+                                                <copy>
+                                                    <from expression="true()"/>
+                                                    <to variable="bExpired"/>
+                                                </copy>
+                                            </assign>
+                                        </sequence>
+                                    </case>
+                                    <otherwise/>
+                                </switch>
+                                <empty name="TaskCompleted"/>
+                            </sequence>
+                        </onMessage>
+                        <onMessage operation="onTaskAssigned"
+                                   partnerLink="CertificationTask.TaskService_1"
+                                   portType="taskservice:TaskServiceCallback"
+                                   variable="taskAssignedMessage">
+                            <bpelx:annotation>
+                                <bpelx:pattern patternName="Task is assigned"></bpelx:pattern>
+                            </bpelx:annotation>
+                            <sequence>
+                                <switch name="Switch3">
+                                    <case condition="bpws:getVariableData('taskAssignedMessage','payload','/taskservice:taskAssignedMessage/task:task/task:systemAttributes/task:state')='ASSIGNED'
+and
+bpws:getVariableData('taskAssignedMessage','payload','/taskservice:taskAssignedMessage/task:task/task:systemAttributes/task:substate')='REASSIGNED'
+">
+                                        <bpelx:annotation>
+                                            <bpelx:general>
+                                                <bpelx:property name="userLabel">
+                                                    <![CDATA[TASK REASSIGNED]]>
+                                                </bpelx:property>
+                                            </bpelx:general>
+                                        </bpelx:annotation>
+                                        <sequence name="Sequence5">
+                                            <assign name="AssignProxyReAssignInput">
+                                                <copy>
+                                                    <from expression="string(bpws:getVariableData('inputVariable','payload','/client:process/client:certificationId'))"/>
+                                                    <to variable="InvokeProxyReAssignCallback_taskProxy_InputVariable"
+                                                        part="parameters"
+                                                        query="/ns2:taskProxy/arg0"/>
+                                                </copy>
+                                                <copy>
+                                                    <from variable="taskAssignedMessage"
+                                                          part="payload"
+                                                          query="/taskservice:taskAssignedMessage/task:task/task:identificationKey"/>
+                                                    <to variable="InvokeProxyReAssignCallback_taskProxy_InputVariable"
+                                                        part="parameters"
+                                                        query="/ns2:taskProxy/arg1"/>
+                                                </copy>
+                                                <copy>
+                                                    <from variable="taskAssignedMessage"
+                                                          part="payload"
+                                                          query="/taskservice:taskAssignedMessage/task:task/task:systemAttributes/task:assigneeUsers/task:id"/>
+                                                    <to variable="InvokeProxyReAssignCallback_taskProxy_InputVariable"
+                                                        part="parameters"
+                                                        query="/ns2:taskProxy/arg2"/>
+                                                </copy>
+                                                <copy>
+                                                    <from variable="taskAssignedMessage"
+                                                          part="payload"
+                                                          query="/taskservice:taskAssignedMessage/task:task/task:systemAttributes/task:assigneeUsers/task:id"/>
+                                                    <to variable="InvokeProxyReAssignCallback_taskProxy_InputVariable"
+                                                        part="parameters"
+                                                        query="/ns2:taskProxy/arg3"/>
+                                                </copy>
+                                                <copy>
+                                                    <from variable="taskAssignedMessage"
+                                                          part="payload"
+                                                          query="/taskservice:taskAssignedMessage/task:task/task:systemAttributes/task:state"/>
+                                                    <to variable="InvokeProxyReAssignCallback_taskProxy_InputVariable"
+                                                        part="parameters"
+                                                        query="/ns2:taskProxy/arg4"/>
+                                                </copy>
+                                            </assign>
+                                            <invoke name="InvokeProxyReAssignCallback"
+                                                    inputVariable="InvokeProxyReAssignCallback_taskProxy_InputVariable"
+                                                    outputVariable="InvokeProxyReAssignCallback_taskProxy_OutputVariable"
+                                                    partnerLink="CertificationWSPartnerLink"
+                                                    portType="ns2:CertificationCallback"
+                                                    operation="taskProxy"
+                                                    bpelx:invokeAsDetail="no"/>
+                                        </sequence>
+                                    </case>
+                                    <otherwise/>
+                                </switch>
+                            
+                                <assign name="CertificationTask2_readTask">
+                                    <copy>
+                                        <from variable="taskAssignedMessage"
+                                              part="payload"
+                                              query="/taskservice:taskAssignedMessage/task:task"/>
+                                        <to variable="CertificationTask2_globalVariable"
+                                            part="payload" query="/task:task"/>
+                                    </copy>
+                                </assign>
+                            </sequence>
+                        </onMessage>
+                        <onMessage operation="onTaskUpdated"
+                                   partnerLink="CertificationTask.TaskService_1"
+                                   portType="taskservice:TaskServiceCallback"
+                                   variable="taskUpdatedMessage">
+                            <bpelx:annotation>
+                                <bpelx:pattern patternName="Task is updated"></bpelx:pattern>
+                            </bpelx:annotation>
+                            <sequence>
+                                <switch name="Switch2">
+                                    <!--case condition="bpws:getVariableData('taskUpdatedMessage','payload','/taskservice:taskUpdatedMessage/task:task/task:systemAttributes/task:state') = 'ASSIGNED' and  bpws:getVariableData('taskUpdatedMessage','payload','/taskservice:taskUpdatedMessage/task:task/task:systemAttributes/task:substate') = 'REASSIGNED' ">
+                                        <bpelx:annotation>
+                                            <bpelx:general>
+                                                <bpelx:property name="userLabel">TASK REASSIGNED</bpelx:property>
+                                            </bpelx:general>
+                                        </bpelx:annotation>
+                                        <sequence name="Sequence4">
+                                            <assign name="AssignProxyReassignInput">
+                                                <copy>
+                                                    <from expression="string(bpws:getVariableData('inputVariable','payload','/client:process/client:certificationId'))"/>
+                                                    <to variable="InvokeReassignCallback_taskProxy_InputVariable"
+                                                        part="parameters"
+                                                        query="/ns2:taskProxy/arg0"/>
+                                                </copy>
+                                                <copy>
+                                                    <from variable="taskUpdatedMessage"
+                                                          part="payload"
+                                                          query="/taskservice:taskUpdatedMessage/task:task/task:identificationKey"/>
+                                                    <to variable="InvokeReassignCallback_taskProxy_InputVariable"
+                                                        part="parameters"
+                                                        query="/ns2:taskProxy/arg1"/>
+                                                </copy>
+                                                <copy>
+                                                    <from variable="taskUpdatedMessage"
+                                                          part="payload"
+                                                          query="/taskservice:taskUpdatedMessage/task:task/task:systemAttributes/task:assigneeUsers/task:id"/>
+                                                    <to variable="InvokeReassignCallback_taskProxy_InputVariable"
+                                                        part="parameters"
+                                                        query="/ns2:taskProxy/arg2"/>
+                                                </copy>
+                                                <copy>
+                                                    <from variable="taskUpdatedMessage"
+                                                          part="payload"
+                                                          query="/taskservice:taskUpdatedMessage/task:task/task:systemAttributes/task:assigneeUsers/task:id"/>
+                                                    <to variable="InvokeReassignCallback_taskProxy_InputVariable"
+                                                        part="parameters"
+                                                        query="/ns2:taskProxy/arg3"/>
+                                                </copy>
+                                                <copy>
+                                                    <from variable="taskUpdatedMessage"
+                                                          part="payload"
+                                                          query="/taskservice:taskUpdatedMessage/task:task/task:systemAttributes/task:state"/>
+                                                    <to variable="InvokeReassignCallback_taskProxy_InputVariable"
+                                                        part="parameters"
+                                                        query="/ns2:taskProxy/arg4"/>
+                                                </copy>
+                                            </assign>
+                                            <invoke name="InvokeReassignCallback"
+                                                    bpelx:invokeAsDetail="no"
+                                                    inputVariable="InvokeReassignCallback_taskProxy_InputVariable"
+                                                    outputVariable="InvokeReassignCallback_taskProxy_OutputVariable"
+                                                    partnerLink="CertificationWSPartnerLink"
+                                                    portType="ns2:CertificationCallback"
+                                                    operation="taskProxy"/>
+                                        </sequence>
+                                    </case-->
+                                    <case condition="bpws:getVariableData('taskUpdatedMessage','payload','/taskservice:taskUpdatedMessage/task:task/task:systemAttributes/task:state') = 'ASSIGNED' and bpws:getVariableData('taskUpdatedMessage','payload','/taskservice:taskUpdatedMessage/task:task/task:systemAttributes/task:substate') = 'ESCALATED'">
+                                        <bpelx:annotation>
+                                            <bpelx:pattern>TASK ESCALATED</bpelx:pattern>
+                                            <bpelx:general>
+                                                <bpelx:property name="userLabel">TASK ESCALATED</bpelx:property>
+                                            </bpelx:general>
+                                        </bpelx:annotation>
+                                        <sequence name="Sequence2">
+                                            <assign name="AssignEscalationInput">
+                                                <copy>
+                                                    <from expression="string(bpws:getVariableData('inputVariable','payload','/client:process/client:certificationId'))"/>
+                                                    <to variable="InvokeEscalationCallback_taskReassign_InputVariable"
+                                                        part="parameters"
+                                                        query="/ns2:taskReassign/arg0"/>
+                                                </copy>
+                                                <copy>
+                                                    <from variable="taskUpdatedMessage"
+                                                          part="payload"
+                                                          query="/taskservice:taskUpdatedMessage/task:task/task:identificationKey"/>
+                                                    <to variable="InvokeEscalationCallback_taskReassign_InputVariable"
+                                                        part="parameters"
+                                                        query="/ns2:taskReassign/arg1"/>
+                                                </copy>
+                                                <copy>
+                                                    <from variable="taskUpdatedMessage"
+                                                          part="payload"
+                                                          query="/taskservice:taskUpdatedMessage/task:task/task:systemAttributes/task:assigneeUsers/task:id"/>
+                                                    <to variable="InvokeEscalationCallback_taskReassign_InputVariable"
+                                                        part="parameters"
+                                                        query="/ns2:taskReassign/arg2"/>
+                                                </copy>
+                                            </assign>
+                                            <invoke name="InvokeEscalationCallback"
+                                                    inputVariable="InvokeEscalationCallback_taskReassign_InputVariable"
+                                                    outputVariable="InvokeEscalationCallback_taskReassign_OutputVariable"
+                                                    partnerLink="CertificationWSPartnerLink"
+                                                    portType="ns2:CertificationCallback"
+                                                    operation="taskReassign"
+                                                    bpelx:invokeAsDetail="no"/>
+                                        </sequence>
+                                    </case>
+                                    <case condition="bpws:getVariableData('taskUpdatedMessage','payload','/taskservice:taskUpdatedMessage/task:task/task:systemAttributes/task:state') = 'ASSIGNED' and bpws:getVariableData('taskUpdatedMessage','payload','/taskservice:taskUpdatedMessage/task:task/task:systemAttributes/task:substate') = 'DELEGATED' ">
+                                        <bpelx:annotation>
+                                            <bpelx:pattern>TASK PROXIED</bpelx:pattern>
+                                            <bpelx:general>
+                                                <bpelx:property name="userLabel">TASK PROXIED</bpelx:property>
+                                            </bpelx:general>
+                                        </bpelx:annotation>
+                                        <sequence name="Sequence3">
+                                            <assign name="AssignProxyInput">
+                                                <copy>
+                                                    <from expression="string(bpws:getVariableData('inputVariable','payload','/client:process/client:certificationId'))"/>
+                                                    <to variable="InvokeProxyCallback_taskProxy_InputVariable"
+                                                        part="parameters"
+                                                        query="/ns2:taskProxy/arg0"/>
+                                                </copy>
+                                                <copy>
+                                                    <from variable="taskUpdatedMessage"
+                                                          part="payload"
+                                                          query="/taskservice:taskUpdatedMessage/task:task/task:identificationKey"/>
+                                                    <to variable="InvokeProxyCallback_taskProxy_InputVariable"
+                                                        part="parameters"
+                                                        query="/ns2:taskProxy/arg1"/>
+                                                </copy>
+                                                <copy>
+                                                    <from variable="taskUpdatedMessage"
+                                                          part="payload"
+                                                          query="/taskservice:taskUpdatedMessage/task:task/task:systemAttributes/task:assigneeUsers/task:id"/>
+                                                    <to variable="InvokeProxyCallback_taskProxy_InputVariable"
+                                                        part="parameters"
+                                                        query="/ns2:taskProxy/arg2"/>
+                                                </copy>
+                                                <copy>
+                                                    <from variable="taskUpdatedMessage"
+                                                          part="payload"
+                                                          query="/taskservice:taskUpdatedMessage/task:task/task:systemAttributes/task:originalAssigneeUser"/>
+                                                    <to variable="InvokeProxyCallback_taskProxy_InputVariable"
+                                                        part="parameters"
+                                                        query="/ns2:taskProxy/arg3"/>
+                                                </copy>
+                                                <copy>
+                                                    <from variable="taskUpdatedMessage"
+                                                          part="payload"
+                                                          query="/taskservice:taskUpdatedMessage/task:task/task:systemAttributes/task:state"/>
+                                                    <to variable="InvokeProxyCallback_taskProxy_InputVariable"
+                                                        part="parameters"
+                                                        query="/ns2:taskProxy/arg4"/>
+                                                </copy>
+                                            </assign>
+                                            <invoke name="InvokeProxyCallback"
+                                                    inputVariable="InvokeProxyCallback_taskProxy_InputVariable"
+                                                    outputVariable="InvokeProxyCallback_taskProxy_OutputVariable"
+                                                    partnerLink="CertificationWSPartnerLink"
+                                                    portType="ns2:CertificationCallback"
+                                                    operation="taskProxy"
+                                                    bpelx:invokeAsDetail="no"/>
+                                        </sequence>
+                                    </case>
+                                    <otherwise/>
+                                </switch>
+                                <assign name="CertificationTask2_readTask">
+                                    <copy>
+                                        <from variable="taskUpdatedMessage"
+                                              part="payload"
+                                              query="/taskservice:taskUpdatedMessage/task:task"/>
+                                        <to variable="CertificationTask2_globalVariable"
+                                            part="payload" query="/task:task"/>
+                                    </copy>
+                                </assign>
+                            </sequence>
+                        </onMessage>
+                        <onMessage operation="onSubTaskUpdated"
+                                   partnerLink="CertificationTask.TaskService_1"
+                                   portType="taskservice:TaskServiceCallback"
+                                   variable="subTaskUpdatedMessage">
+                            <bpelx:annotation>
+                                <bpelx:pattern patternName="Sub task is updated"></bpelx:pattern>
+                            </bpelx:annotation>
+                            <sequence>
+                                <empty name="SubTaskUpdated"/>
+                            </sequence>
+                        </onMessage>
+                        <onMessage operation="onStageCompleted"
+                                   partnerLink="CertificationTask.TaskService_1"
+                                   portType="taskservice:TaskServiceCallback"
+                                   variable="stageCompleteMessage">
+                            <bpelx:annotation>
+                                <bpelx:pattern patternName="Stage is completed"></bpelx:pattern>
+                            </bpelx:annotation>
+                            <sequence>
+                                <empty name="stageCompleted"/>
+                            </sequence>
+                        </onMessage>
+                    </pick>
+                </while>
+            </sequence>
+        </scope>
+        <switch name="taskSwitch">
+            <case condition="$CertificationTask2_globalVariable.payload/task:systemAttributes/task:outcome = &quot;Sign Off&quot; and not(bpws:getVariableData('bExpired'))">
+                <bpelx:annotation>
+                    <bpelx:pattern>Task outcome is Sign Off</bpelx:pattern>
+                    <bpelx:general>
+                        <bpelx:property name="userLabel">Task outcome is Sign Off<![CDATA[Task outcome is Sign Off and not expired]]></bpelx:property>
+                    </bpelx:general>
+                </bpelx:annotation>
+                <sequence>
+                    <assign>
+                        <copy>
+                            <from expression="string('Sign Off')"/>
+                            <to variable="outputVariable" part="payload"
+                                query="/client:processResponse/client:result"/>
+                        </copy>
+                    </assign>
+                </sequence>
+            </case>
+            <otherwise>
+                <sequence>
+                    <assign name="getDispNames">
+                        <copy>
+                            <from expression="ids:getUserProperty(bpws:getVariableData('inputVariable','payload','/client:process/client:reviewer'), 'displayName')"/>
+                            <to variable="certifierFullName"/>
+                        </copy>
+                        <copy>
+                            <from expression="ids:getUserProperty(ids:getManager(bpws:getVariableData('inputVariable','payload','/client:process/client:reviewer')), 'displayName')"/>
+                            <to variable="managerFullName"/>
+                        </copy>
+                    </assign>
+                    <scope name="UserNotification2">
+                        <bpelx:annotation>
+                            <bpelx:pattern patternName="bpelx:usrnotif"></bpelx:pattern>
+                            <bpelx:general>
+                                <bpelx:property name="userLabel">
+                                    <![CDATA[notifyManager]]>
+                                </bpelx:property>
+                            </bpelx:general>
+                        </bpelx:annotation>
+                        <variables>
+                            <variable name="varNotificationReq"
+                                      messageType="ns5:UserNotificationRequest"/>
+                            <variable name="varNotificationResponse"
+                                      messageType="ns5:ArrayOfResponse"/>
+                            <variable name="NotificationServiceFaultVariable"
+                                      messageType="ns5:NotificationServiceErrorMessage"/>
+                        </variables>
+                        <sequence name="Sequence6">
+                            <assign name="AssignUser">
+                                <copy>
+                                    <from expression="ids:getManager(bpws:getVariableData('inputVariable','payload','/client:process/client:reviewer'))"/>
+                                    <to variable="varNotificationReq"
+                                        part="UserNotificationPayload"
+                                        query="ns5:UserId"/>
+                                </copy>
+                            </assign>
+                            <assign name="AssignCommonPayload">
+                                <copy>
+                                    <from expression="string('')"/>
+                                    <to variable="varNotificationReq"
+                                        part="UserNotificationPayload"
+                                        query="ns5:GenericPayload/ns5:CommonPayload/ns5:To"/>
+                                </copy>
+                                <copy>
+                                    <from expression="string('Task expired')"/>
+                                    <to variable="varNotificationReq"
+                                        part="UserNotificationPayload"
+                                        query="ns5:GenericPayload/ns5:CommonPayload/ns5:Subject"/>
+                                </copy>
+                                <copy>
+                                    <from expression="concat('&lt;html>&lt;head>&lt;/head>&lt;body>&lt;img src=&quot;https://wsp.wayport.net/images/ATT_Wi-Fi_Solutions.png&quot; alt=&quot;AT&amp;amp;T&quot;>&lt;/img>&lt;div style=&quot;line-height:17px;&quot;>&lt;font style=&quot;font-family: Calibri, Verdana, Arial, Helvetica, sans-serif;font-size: 11px&quot;>&lt;p>Dear ',bpws:getVariableData('managerFullName') ,',&lt;br>&lt;br>We would like to request your assistance in meeting compliance requirements for the employee/s reporting to the individual listed below: &lt;b>', bpws:getVariableData('certifierFullName'), '&lt;/b> You have received this message because the aforementioned individuals have not responded to or taken action on the most recent User Certification process. Keep in mind that 100% compliance is required and to date our records show that the certification has not been completed.&lt;/p>For any issues, please contact the Delegated Administrator for your Organization, or Account Management at &lt;a href=&quot;mailto:DL-SvcMgmtWiFiD@att.com&quot;>DL-SvcMgmtWiFiD@att.com&lt;/a>&lt;p> Your AT&amp;amp;T Wi-Fi Solutions Compliance Administrator&lt;br>&lt;center>&amp;copy; 2015 AT&amp;amp;T Intellectual Property.  All rights reserved.  AT&amp;amp;T, the AT&amp;amp;T logo and all other AT&amp;amp;T marks contained herein are trademarks of AT&amp;amp;T Intellectual Property and/or AT&amp;amp;T affiliated companies.&lt;/center>&lt;br>&lt;center>&lt;font style=&quot;color:#c4bc96;font-size:90%&quot;>Please do not reply to this message; this mailbox is not monitored.&lt;/font>&lt;/center>&lt;/p>&lt;/font>&lt;/div>&lt;/body>&lt;/html>')"/>
+                                    <to variable="varNotificationReq"
+                                        part="UserNotificationPayload"
+                                        query="ns5:GenericPayload/ns5:CommonPayload/ns5:Content/ns5:ContentBody"/>
+                                </copy>
+                                <copy>
+                                    <from expression="string('text/html; charset=UTF-8')"/>
+                                    <to variable="varNotificationReq"
+                                        part="UserNotificationPayload"
+                                        query="ns5:GenericPayload/ns5:CommonPayload/ns5:Content/ns5:MimeType"/>
+                                </copy>
+                                <copy>
+                                    <from expression="string('')"/>
+                                    <to variable="varNotificationReq"
+                                        part="UserNotificationPayload"
+                                        query="ns5:GenericPayload/ns5:CommonPayload/ns5:From"/>
+                                </copy>
+                            </assign>
+                            <invoke name="InvokeNotificationService"
+                                    portType="ns5:NotificationService"
+                                    partnerLink="NotificationService1"
+                                    inputVariable="varNotificationReq"
+                                    outputVariable="varNotificationResponse"
+                                    operation="sendNotificationToUser"/>
+                        </sequence>
+                    </scope>
+                    <scope name="CertificationTask2"
+                                 xmlns:wf="http://schemas.oracle.com/bpel/extensions/workflow"
+                                 wf:key="CertificationTask2_globalVariable"
+                                 xmlns="http://schemas.xmlsoap.org/ws/2003/03/business-process/">
+      <bpelx:annotation xmlns:bpelx="http://schemas.oracle.com/bpel/extension">
+         <bpelx:pattern patternName="bpelx:workflow"></bpelx:pattern>
+                            <bpelx:general>
+                                <bpelx:property name="userLabel">
+                                    <![CDATA[CertificationTask2]]>
+                                </bpelx:property>
+                            </bpelx:general>
+                        </bpelx:annotation>
+      <variables>
+         <variable name="initiateTaskInput"
+                   messageType="taskservice:initiateTaskMessage"/>
+         <variable name="initiateTaskResponseMessage"
+                   messageType="taskservice:initiateTaskResponseMessage"/>
+         <variable name="workflowContext" element="wfcommon:workflowContext"/>
+         <variable name="taskUpdatedMessage"
+                   messageType="taskservice:taskUpdatedMessage"/>
+         <variable name="taskAssignedMessage"
+                   messageType="taskservice:taskAssignedMessage"/>
+         <variable name="subTaskUpdatedMessage"
+                   messageType="taskservice:subTaskUpdatedMessage"/>
+         <variable name="stageCompleteMessage"
+                   messageType="taskservice:stageCompleteMessage"/>
+      </variables>
+      <sequence>
+         <assign name="CertificationTask2_AssignTaskAttributes">
+            <copy>
+               <from expression="number(3)"/>
+               <to variable="initiateTaskInput" part="payload"
+                   query="/taskservice:initiateTask/task:task/task:priority"/>
+            </copy>
+            <copy>
+               <from expression="ora:getConversationId()"/>
+               <to variable="initiateTaskInput" part="payload"
+                   query="/taskservice:initiateTask/task:task/task:identificationKey"/>
+            </copy>
+            <copy>
+               <from>
+                  <payload xmlns="http://xmlns.oracle.com/bpel/workflow/task">
+	<process xmlns="http://xmlns.oracle.com/CertificationAssignment/CertificationProcess/CertificationProcess"/> 
+ <certificationName xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+ <organization xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+ <certificationType xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+ <certificationId xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+ <reviewer xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+ <url xmlns="http://xmlns.oracle.com/bpel/workflow/task"/>
+</payload>
+               </from>
+               <to variable="initiateTaskInput" part="payload"
+                   query="/taskservice:initiateTask/task:task/task:payload"/>
+            </copy>
+            <copy>
+               <from variable="inputVariable" part="payload"
+                     query="/client:process"/>
+               <to variable="initiateTaskInput" part="payload"
+                   query="/taskservice:initiateTask/task:task/task:payload/client:process"/>
+            </copy>
+            <copy>
+               <from variable="inputVariable" part="payload"
+                     query="/client:process/client:certificationName"/>
+               <to variable="initiateTaskInput" part="payload"
+                   query="/taskservice:initiateTask/task:task/task:payload/task:certificationName"/>
+            </copy>
+            <copy>
+               <from variable="inputVariable" part="payload"
+                     query="/client:process/client:organizationName"/>
+               <to variable="initiateTaskInput" part="payload"
+                   query="/taskservice:initiateTask/task:task/task:payload/task:organization"/>
+            </copy>
+            <copy>
+               <from variable="inputVariable" part="payload"
+                     query="/client:process/client:certificationType"/>
+               <to variable="initiateTaskInput" part="payload"
+                   query="/taskservice:initiateTask/task:task/task:payload/task:certificationType"/>
+            </copy>
+            <copy>
+               <from variable="inputVariable" part="payload"
+                     query="/client:process/client:certificationId"/>
+               <to variable="initiateTaskInput" part="payload"
+                   query="/taskservice:initiateTask/task:task/task:payload/task:certificationId"/>
+            </copy>
+            <copy>
+               <from variable="inputVariable" part="payload"
+                     query="/client:process/client:reviewer"/>
+               <to variable="initiateTaskInput" part="payload"
+                   query="/taskservice:initiateTask/task:task/task:payload/task:reviewer"/>
+            </copy>
+            <copy>
+               <from expression="ora:getPreference('oimServerUrl')"/>
+               <to variable="initiateTaskInput" part="payload"
+                   query="/taskservice:initiateTask/task:task/task:payload/task:url"/>
+            </copy>
+         </assign>
+         <invoke name="initiateTask_CertificationTask2"
+                 partnerLink="CertificationTask.TaskService_1"
+                 operation="initiateTask" portType="taskservice:TaskService"
+                 inputVariable="initiateTaskInput"
+                 outputVariable="initiateTaskResponseMessage"/>
+         <assign name="CertificationTask2_AssignWorkflowContext">
+            <copy>
+               <from variable="initiateTaskResponseMessage" part="payload"
+                     query="/taskservice:initiateTaskResponse/wfcommon:workflowContext"/>
+               <to variable="workflowContext"
+                   query="/wfcommon:workflowContext"/>
+            </copy>
+            <copy>
+               <from variable="initiateTaskResponseMessage" part="payload"
+                     query="/taskservice:initiateTaskResponse/task:task"/>
+               <to variable="CertificationTask2_globalVariable" part="payload"
+                   query="/task:task"/>
+            </copy>
+         </assign>
+         <assign name="AssignWSDLURL">
+            <copy>
+               <from>
+                  <EndpointReference xmlns="http://www.w3.org/2005/08/addressing">
+    <Address/>
+</EndpointReference>
+               </from>
+               <to variable="partnerLink"/>
+            </copy>
+            <copy>
+               <from expression="concat(bpws:getVariableData('inputVariable','payload','/client:process/client:callbackURL'),'/CertificationCallbackService/CertificationCallbackService')"/>
+               <to variable="partnerLink"
+                   query="/ns4:EndpointReference/ns4:Address"/>
+            </copy>
+            <copy>
+               <from variable="partnerLink"/>
+               <to partnerLink="CertificationWSPartnerLink"/>
+            </copy>
+         </assign>
+         <while condition="bpws:getVariableData('CertificationTask2_globalVariable', 'payload', '/task:task/task:systemAttributes/task:state') != 'EXPIRED' and bpws:getVariableData('CertificationTask2_globalVariable', 'payload', '/task:task/task:systemAttributes/task:state') != 'COMPLETED' and bpws:getVariableData('CertificationTask2_globalVariable', 'payload', '/task:task/task:systemAttributes/task:state') != 'WITHDRAWN' and bpws:getVariableData('CertificationTask2_globalVariable', 'payload', '/task:task/task:systemAttributes/task:state') != 'STALE' and bpws:getVariableData('CertificationTask2_globalVariable', 'payload', '/task:task/task:systemAttributes/task:state') != 'ERRORED'"
+                name="while">
+            <pick name="receiveTaskUpdates_CertificationTask2">
+               <onMessage operation="onTaskCompleted"
+                          partnerLink="CertificationTask.TaskService_1"
+                          portType="taskservice:TaskServiceCallback"
+                          variable="CertificationTask2_globalVariable">
+                  <bpelx:annotation xmlns:bpelx="http://schemas.oracle.com/bpel/extension">
+                     <bpelx:pattern patternName="Task is completed"></bpelx:pattern>
+                  </bpelx:annotation>
+                  <sequence>
+                     <switch name="Switch1">
+                        <case condition="bpws:getVariableData('CertificationTask2_globalVariable','payload','/task:task/task:systemAttributes/task:state')='EXPIRED'">
+                           <bpelx:annotation xmlns:bpelx="http://schemas.oracle.com/bpel/extension">
+                              <bpelx:pattern>TASK EXPIRED</bpelx:pattern>
+                              <bpelx:general>
+                                 <bpelx:property name="userLabel">TASK EXPIRED<![CDATA[TASK EXPIRED]]></bpelx:property>
+                              </bpelx:general>
+                           </bpelx:annotation>
+                           <sequence name="Sequence1">
+                              <assign name="AssignExpiryInput">
+                                 <copy>
+                                    <from expression="string(bpws:getVariableData('inputVariable','payload','/client:process/client:certificationId'))"/>
+                                    <to variable="InvokeExpiryCallback_taskExpire_InputVariable"
+                                        part="parameters"
+                                        query="/ns2:taskExpire/arg0"/>
+                                 </copy>
+                                 <copy>
+                                    <from variable="CertificationTask2_globalVariable"
+                                          part="payload"
+                                          query="/task:task/task:identificationKey"/>
+                                    <to variable="InvokeExpiryCallback_taskExpire_InputVariable"
+                                        part="parameters"
+                                        query="/ns2:taskExpire/arg1"/>
+                                 </copy>
+                              </assign>
+                              <invoke name="InvokeExpiryCallback"
+                                      inputVariable="InvokeExpiryCallback_taskExpire_InputVariable"
+                                      outputVariable="InvokeExpiryCallback_taskExpire_OutputVariable"
+                                      partnerLink="CertificationWSPartnerLink"
+                                      portType="ns2:CertificationCallback"
+                                      operation="taskExpire"
+                                      bpelx:invokeAsDetail="no"
+                                      xmlns:bpelx="http://schemas.oracle.com/bpel/extension"/>
+                           </sequence>
+                        </case>
+                        <otherwise/>
+                     </switch>
+                     
+                     <empty name="TaskCompleted"/>
+                  </sequence>
+               </onMessage>
+               <onMessage operation="onTaskAssigned"
+                          partnerLink="CertificationTask.TaskService_1"
+                          portType="taskservice:TaskServiceCallback"
+                          variable="taskAssignedMessage">
+                  <bpelx:annotation xmlns:bpelx="http://schemas.oracle.com/bpel/extension">
+                     <bpelx:pattern patternName="Task is assigned"></bpelx:pattern>
+                  </bpelx:annotation>
+                  <sequence>
+                     <switch name="Switch3">
+                        <case condition="bpws:getVariableData('taskAssignedMessage','payload','/taskservice:taskAssignedMessage/task:task/task:systemAttributes/task:state')='ASSIGNED' and bpws:getVariableData('taskAssignedMessage','payload','/taskservice:taskAssignedMessage/task:task/task:systemAttributes/task:substate')='REASSIGNED' ">
+                           <bpelx:annotation xmlns:bpelx="http://schemas.oracle.com/bpel/extension">
+                              <bpelx:general>
+                                 <bpelx:property name="userLabel">
+                                    <![CDATA[TASK REASSIGNED]]>
+                                 </bpelx:property>
+                              </bpelx:general>
+                           </bpelx:annotation>
+                           <sequence name="Sequence5">
+                              <assign name="AssignProxyReAssignInput">
+                                 <copy>
+                                    <from expression="string(bpws:getVariableData('inputVariable','payload','/client:process/client:certificationId'))"/>
+                                    <to variable="InvokeProxyReAssignCallback_taskProxy_InputVariable"
+                                        part="parameters"
+                                        query="/ns2:taskProxy/arg0"/>
+                                 </copy>
+                                 <copy>
+                                    <from variable="taskAssignedMessage"
+                                          part="payload"
+                                          query="/taskservice:taskAssignedMessage/task:task/task:identificationKey"/>
+                                    <to variable="InvokeProxyReAssignCallback_taskProxy_InputVariable"
+                                        part="parameters"
+                                        query="/ns2:taskProxy/arg1"/>
+                                 </copy>
+                                 <copy>
+                                    <from variable="taskAssignedMessage"
+                                          part="payload"
+                                          query="/taskservice:taskAssignedMessage/task:task/task:systemAttributes/task:assigneeUsers/task:id"/>
+                                    <to variable="InvokeProxyReAssignCallback_taskProxy_InputVariable"
+                                        part="parameters"
+                                        query="/ns2:taskProxy/arg2"/>
+                                 </copy>
+                                 <copy>
+                                    <from variable="taskAssignedMessage"
+                                          part="payload"
+                                          query="/taskservice:taskAssignedMessage/task:task/task:systemAttributes/task:assigneeUsers/task:id"/>
+                                    <to variable="InvokeProxyReAssignCallback_taskProxy_InputVariable"
+                                        part="parameters"
+                                        query="/ns2:taskProxy/arg3"/>
+                                 </copy>
+                                 <copy>
+                                    <from variable="taskAssignedMessage"
+                                          part="payload"
+                                          query="/taskservice:taskAssignedMessage/task:task/task:systemAttributes/task:state"/>
+                                    <to variable="InvokeProxyReAssignCallback_taskProxy_InputVariable"
+                                        part="parameters"
+                                        query="/ns2:taskProxy/arg4"/>
+                                 </copy>
+                              </assign>
+                              <invoke name="InvokeProxyReAssignCallback"
+                                      inputVariable="InvokeProxyReAssignCallback_taskProxy_InputVariable"
+                                      outputVariable="InvokeProxyReAssignCallback_taskProxy_OutputVariable"
+                                      partnerLink="CertificationWSPartnerLink"
+                                      portType="ns2:CertificationCallback"
+                                      operation="taskProxy"
+                                      bpelx:invokeAsDetail="no"
+                                      xmlns:bpelx="http://schemas.oracle.com/bpel/extension"/>
+                           </sequence>
+                        </case>
+                        <otherwise/>
+                     </switch>
+                     <assign name="CertificationTask2_readTask">
+                        <copy>
+                           <from variable="taskAssignedMessage" part="payload"
+                                 query="/taskservice:taskAssignedMessage/task:task"/>
+                           <to variable="CertificationTask2_globalVariable"
+                               part="payload" query="/task:task"/>
+                        </copy>
+                     </assign>
+                  </sequence>
+               </onMessage>
+               <onMessage operation="onTaskUpdated"
+                          partnerLink="CertificationTask.TaskService_1"
+                          portType="taskservice:TaskServiceCallback"
+                          variable="taskUpdatedMessage">
+                  <bpelx:annotation xmlns:bpelx="http://schemas.oracle.com/bpel/extension">
+                     <bpelx:pattern patternName="Task is updated"></bpelx:pattern>
+                  </bpelx:annotation>
+                  <sequence>
+                     <switch name="Switch2">
+                        <!--case condition="bpws:getVariableData('taskUpdatedMessage','payload','/taskservice:taskUpdatedMessage/task:task/task:systemAttributes/task:state') = 'ASSIGNED' and  bpws:getVariableData('taskUpdatedMessage','payload','/taskservice:taskUpdatedMessage/task:task/task:systemAttributes/task:substate') = 'REASSIGNED' ">
+                                        <bpelx:annotation>
+                                            <bpelx:general>
+                                                <bpelx:property name="userLabel">TASK REASSIGNED</bpelx:property>
+                                            </bpelx:general>
+                                        </bpelx:annotation>
+                                        <sequence name="Sequence4">
+                                            <assign name="AssignProxyReassignInput">
+                                                <copy>
+                                                    <from expression="string(bpws:getVariableData('inputVariable','payload','/client:process/client:certificationId'))"/>
+                                                    <to variable="InvokeReassignCallback_taskProxy_InputVariable"
+                                                        part="parameters"
+                                                        query="/ns2:taskProxy/arg0"/>
+                                                </copy>
+                                                <copy>
+                                                    <from variable="taskUpdatedMessage"
+                                                          part="payload"
+                                                          query="/taskservice:taskUpdatedMessage/task:task/task:identificationKey"/>
+                                                    <to variable="InvokeReassignCallback_taskProxy_InputVariable"
+                                                        part="parameters"
+                                                        query="/ns2:taskProxy/arg1"/>
+                                                </copy>
+                                                <copy>
+                                                    <from variable="taskUpdatedMessage"
+                                                          part="payload"
+                                                          query="/taskservice:taskUpdatedMessage/task:task/task:systemAttributes/task:assigneeUsers/task:id"/>
+                                                    <to variable="InvokeReassignCallback_taskProxy_InputVariable"
+                                                        part="parameters"
+                                                        query="/ns2:taskProxy/arg2"/>
+                                                </copy>
+                                                <copy>
+                                                    <from variable="taskUpdatedMessage"
+                                                          part="payload"
+                                                          query="/taskservice:taskUpdatedMessage/task:task/task:systemAttributes/task:assigneeUsers/task:id"/>
+                                                    <to variable="InvokeReassignCallback_taskProxy_InputVariable"
+                                                        part="parameters"
+                                                        query="/ns2:taskProxy/arg3"/>
+                                                </copy>
+                                                <copy>
+                                                    <from variable="taskUpdatedMessage"
+                                                          part="payload"
+                                                          query="/taskservice:taskUpdatedMessage/task:task/task:systemAttributes/task:state"/>
+                                                    <to variable="InvokeReassignCallback_taskProxy_InputVariable"
+                                                        part="parameters"
+                                                        query="/ns2:taskProxy/arg4"/>
+                                                </copy>
+                                            </assign>
+                                            <invoke name="InvokeReassignCallback"
+                                                    bpelx:invokeAsDetail="no"
+                                                    inputVariable="InvokeReassignCallback_taskProxy_InputVariable"
+                                                    outputVariable="InvokeReassignCallback_taskProxy_OutputVariable"
+                                                    partnerLink="CertificationWSPartnerLink"
+                                                    portType="ns2:CertificationCallback"
+                                                    operation="taskProxy"/>
+                                        </sequence>
+                                    </case-->
+                        <case condition="bpws:getVariableData('taskUpdatedMessage','payload','/taskservice:taskUpdatedMessage/task:task/task:systemAttributes/task:state') = 'ASSIGNED' and bpws:getVariableData('taskUpdatedMessage','payload','/taskservice:taskUpdatedMessage/task:task/task:systemAttributes/task:substate') = 'ESCALATED'">
+                           <bpelx:annotation xmlns:bpelx="http://schemas.oracle.com/bpel/extension">
+                              <bpelx:pattern>TASK ESCALATED</bpelx:pattern>
+                              <bpelx:general>
+                                 <bpelx:property name="userLabel">TASK ESCALATED</bpelx:property>
+                              </bpelx:general>
+                           </bpelx:annotation>
+                           <sequence name="Sequence2">
+                              <assign name="AssignEscalationInput">
+                                 <copy>
+                                    <from expression="string(bpws:getVariableData('inputVariable','payload','/client:process/client:certificationId'))"/>
+                                    <to variable="InvokeEscalationCallback_taskReassign_InputVariable"
+                                        part="parameters"
+                                        query="/ns2:taskReassign/arg0"/>
+                                 </copy>
+                                 <copy>
+                                    <from variable="taskUpdatedMessage"
+                                          part="payload"
+                                          query="/taskservice:taskUpdatedMessage/task:task/task:identificationKey"/>
+                                    <to variable="InvokeEscalationCallback_taskReassign_InputVariable"
+                                        part="parameters"
+                                        query="/ns2:taskReassign/arg1"/>
+                                 </copy>
+                                 <copy>
+                                    <from variable="taskUpdatedMessage"
+                                          part="payload"
+                                          query="/taskservice:taskUpdatedMessage/task:task/task:systemAttributes/task:assigneeUsers/task:id"/>
+                                    <to variable="InvokeEscalationCallback_taskReassign_InputVariable"
+                                        part="parameters"
+                                        query="/ns2:taskReassign/arg2"/>
+                                 </copy>
+                              </assign>
+                              <invoke name="InvokeEscalationCallback"
+                                      inputVariable="InvokeEscalationCallback_taskReassign_InputVariable"
+                                      outputVariable="InvokeEscalationCallback_taskReassign_OutputVariable"
+                                      partnerLink="CertificationWSPartnerLink"
+                                      portType="ns2:CertificationCallback"
+                                      operation="taskReassign"
+                                      bpelx:invokeAsDetail="no"
+                                      xmlns:bpelx="http://schemas.oracle.com/bpel/extension"/>
+                           </sequence>
+                        </case>
+                        <case condition="bpws:getVariableData('taskUpdatedMessage','payload','/taskservice:taskUpdatedMessage/task:task/task:systemAttributes/task:state') = 'ASSIGNED' and bpws:getVariableData('taskUpdatedMessage','payload','/taskservice:taskUpdatedMessage/task:task/task:systemAttributes/task:substate') = 'DELEGATED' ">
+                           <bpelx:annotation xmlns:bpelx="http://schemas.oracle.com/bpel/extension">
+                              <bpelx:pattern>TASK PROXIED</bpelx:pattern>
+                              <bpelx:general>
+                                 <bpelx:property name="userLabel">TASK PROXIED</bpelx:property>
+                              </bpelx:general>
+                           </bpelx:annotation>
+                           <sequence name="Sequence3">
+                              <assign name="AssignProxyInput">
+                                 <copy>
+                                    <from expression="string(bpws:getVariableData('inputVariable','payload','/client:process/client:certificationId'))"/>
+                                    <to variable="InvokeProxyCallback_taskProxy_InputVariable"
+                                        part="parameters"
+                                        query="/ns2:taskProxy/arg0"/>
+                                 </copy>
+                                 <copy>
+                                    <from variable="taskUpdatedMessage"
+                                          part="payload"
+                                          query="/taskservice:taskUpdatedMessage/task:task/task:identificationKey"/>
+                                    <to variable="InvokeProxyCallback_taskProxy_InputVariable"
+                                        part="parameters"
+                                        query="/ns2:taskProxy/arg1"/>
+                                 </copy>
+                                 <copy>
+                                    <from variable="taskUpdatedMessage"
+                                          part="payload"
+                                          query="/taskservice:taskUpdatedMessage/task:task/task:systemAttributes/task:assigneeUsers/task:id"/>
+                                    <to variable="InvokeProxyCallback_taskProxy_InputVariable"
+                                        part="parameters"
+                                        query="/ns2:taskProxy/arg2"/>
+                                 </copy>
+                                 <copy>
+                                    <from variable="taskUpdatedMessage"
+                                          part="payload"
+                                          query="/taskservice:taskUpdatedMessage/task:task/task:systemAttributes/task:originalAssigneeUser"/>
+                                    <to variable="InvokeProxyCallback_taskProxy_InputVariable"
+                                        part="parameters"
+                                        query="/ns2:taskProxy/arg3"/>
+                                 </copy>
+                                 <copy>
+                                    <from variable="taskUpdatedMessage"
+                                          part="payload"
+                                          query="/taskservice:taskUpdatedMessage/task:task/task:systemAttributes/task:state"/>
+                                    <to variable="InvokeProxyCallback_taskProxy_InputVariable"
+                                        part="parameters"
+                                        query="/ns2:taskProxy/arg4"/>
+                                 </copy>
+                              </assign>
+                              <invoke name="InvokeProxyCallback"
+                                      inputVariable="InvokeProxyCallback_taskProxy_InputVariable"
+                                      outputVariable="InvokeProxyCallback_taskProxy_OutputVariable"
+                                      partnerLink="CertificationWSPartnerLink"
+                                      portType="ns2:CertificationCallback"
+                                      operation="taskProxy"
+                                      bpelx:invokeAsDetail="no"
+                                      xmlns:bpelx="http://schemas.oracle.com/bpel/extension"/>
+                           </sequence>
+                        </case>
+                        <otherwise/>
+                     </switch>
+                     <assign name="CertificationTask2_readTask">
+                        <copy>
+                           <from variable="taskUpdatedMessage" part="payload"
+                                 query="/taskservice:taskUpdatedMessage/task:task"/>
+                           <to variable="CertificationTask2_globalVariable"
+                               part="payload" query="/task:task"/>
+                        </copy>
+                     </assign>
+                  </sequence>
+               </onMessage>
+               <onMessage operation="onSubTaskUpdated"
+                          partnerLink="CertificationTask.TaskService_1"
+                          portType="taskservice:TaskServiceCallback"
+                          variable="subTaskUpdatedMessage">
+                  <bpelx:annotation xmlns:bpelx="http://schemas.oracle.com/bpel/extension">
+                     <bpelx:pattern patternName="Sub task is updated"></bpelx:pattern>
+                  </bpelx:annotation>
+                  <sequence>
+                     <empty name="SubTaskUpdated"/>
+                  </sequence>
+               </onMessage>
+               <onMessage operation="onStageCompleted"
+                          partnerLink="CertificationTask.TaskService_1"
+                          portType="taskservice:TaskServiceCallback"
+                          variable="stageCompleteMessage">
+                  <bpelx:annotation xmlns:bpelx="http://schemas.oracle.com/bpel/extension">
+                     <bpelx:pattern patternName="Stage is completed"></bpelx:pattern>
+                  </bpelx:annotation>
+                  <sequence>
+                     <empty name="stageCompleted"/>
+                  </sequence>
+               </onMessage>
+            </pick>
+         </while>
+      </sequence>
+   </scope><assign>
+                        <copy>
+                            <from expression="string('Sign Off')"/>
+                            <to variable="outputVariable" part="payload"
+                                query="/client:processResponse/client:result"/>
+                        </copy>
+                    </assign>  
+                </sequence>
+            </otherwise>
+        </switch>
+        <!-- 
+          Asynchronous callback to the requester. (Note: the callback location and correlation id is transparently handled using WS-addressing.)
+        -->
+        <invoke name="callbackClient" partnerLink="CertificationTaskService" portType="client:CertificationProcessCallback" operation="processResponse" inputVariable="outputVariable"/>
+    </sequence>
+</process>
