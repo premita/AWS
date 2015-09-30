@@ -163,7 +163,7 @@ public class SetManagerHandler implements PostProcessHandler {
 
     @Override
     public BulkEventResult execute(long l, long l1, BulkOrchestration bulkOrchestration) {
-        return null;
+        return new BulkEventResult();
     }
 
     @Override

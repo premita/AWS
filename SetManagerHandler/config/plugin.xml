@@ -2,6 +2,6 @@
 <oimplugins>
     <plugins pluginpoint="oracle.iam.platform.kernel.spi.EventHandler">
         <plugin pluginclass="com.icsynergy.processplugins.SetManagerHandler"
-             version="1.4" name="SetManagerHandler"/>
+             version="1.5" name="SetManagerHandler"/>
     </plugins>
 </oimplugins>
