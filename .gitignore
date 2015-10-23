@@ -1,0 +1,7 @@
+.idea
+OrgDeleteController/classes/
+SelfRegistrationApprovalApp/SelfRegistrationApproval/SCA-INF/classes/
+SelfRegistrationApprovalApp/SelfRegistrationApproval/deploy/
+UsernamePolicy/classes/
+**/classes/
+**/*.iml

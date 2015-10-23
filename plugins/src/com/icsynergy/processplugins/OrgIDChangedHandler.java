@@ -34,7 +34,7 @@ public class OrgIDChangedHandler implements PostProcessHandler {
 
     if (!params.containsKey(UDFGRPID)) {
       logger.finest("Orchestration doesn't have Group ID attribute. Exiting...");
-      return new EventResult();  
+      return new EventResult();
     }
     
     Identity oldOrg = 
