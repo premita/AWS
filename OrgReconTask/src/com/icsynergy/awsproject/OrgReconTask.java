@@ -15,12 +15,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import oracle.iam.identity.exception.NoSuchRoleException;
-import oracle.iam.identity.exception.OrganizationManagerException;
-import oracle.iam.identity.exception.RoleAlreadyExistsException;
-import oracle.iam.identity.exception.RoleCreateException;
-import oracle.iam.identity.exception.RoleModifyException;
-import oracle.iam.identity.exception.ValidationFailedException;
+import oracle.iam.identity.exception.*;
 import oracle.iam.identity.orgmgmt.api.OrganizationManager;
 import oracle.iam.identity.orgmgmt.api.OrganizationManagerConstants;
 import oracle.iam.identity.orgmgmt.vo.Organization;
@@ -30,6 +25,7 @@ import oracle.iam.identity.rolemgmt.vo.Role;
 import oracle.iam.identity.rolemgmt.vo.RoleManagerResult;
 import oracle.iam.identity.usermgmt.api.UserManager;
 import oracle.iam.identity.usermgmt.api.UserManagerConstants;
+import oracle.iam.identity.usermgmt.vo.User;
 import oracle.iam.notification.api.NotificationService;
 import oracle.iam.notification.exception.EventException;
 import oracle.iam.notification.exception.MultipleTemplateException;
@@ -64,7 +60,7 @@ public class OrgReconTask extends TaskSupport {
     private static final String MGID = "MANAGEMENT_GROUP_ID";
     private static final String MGCERTIFIER = "SAP_SERV_EXEC_EMAIL";
 
-    //todo - remove max after data are clean
+    //TODO - remove max after data are clean
     private static final String strSQLTemplate =
 //            "SELECT %s, %s, %s, %s FROM %s WHERE %s NOT IN (%s) GROUP BY %s, %s, %s, %s";
         "SELECT %s, %s, %s, max(%s) as %s FROM %s " +
@@ -276,7 +272,7 @@ public class OrgReconTask extends TaskSupport {
                     org.setAttribute(UDFPIN, rs.getString(MGPIN));
                     org.setAttribute(UDFGRPID, rs.getInt(MGID));
 
-                    if (certUserKey != null && certUserKey.equals("-1")) {
+                    if (certUserKey != null && !certUserKey.equals("-1")) {
                         org.setAttribute(OrganizationManagerConstants.AttributeName.ORG_CERTIFIER_USER_KEY.getId(), certUserKey);
                     }
 
@@ -418,7 +414,9 @@ public class OrgReconTask extends TaskSupport {
 
                     if (certUserKey != null && !certUserKey.equals("-1")) {
                         // if certifier login differs
-                        if (! String.valueOf(org.getAttribute(OrganizationManagerConstants.AttributeName.ORG_CERTIFIER_USER_KEY.getId()))
+                        if (! String
+                                .valueOf(org.getAttribute(
+                                        OrganizationManagerConstants.AttributeName.ORG_CERTIFIER_USER_KEY.getId()))
                                 .equalsIgnoreCase(String.valueOf(certUserKey))) {
 
                             m_logger.finer("Organization certifier is different");
@@ -426,9 +424,8 @@ public class OrgReconTask extends TaskSupport {
                                     "oim has " + String.valueOf(org.getAttribute(OrganizationManagerConstants.AttributeName.ORG_CERTIFIER_USER_KEY.getId())) +
                                     "reconciled has " + certUserKey);
 
-                            attrMap.put(
-                                            OrganizationManagerConstants.AttributeName.ORG_CERTIFIER_USER_KEY.getId(),
-                                            certUserKey);
+                            attrMap.put(OrganizationManagerConstants.AttributeName.ORG_CERTIFIER_USER_KEY.getId(),
+                                    certUserKey);
 
                             bChanges = true;
                         }
