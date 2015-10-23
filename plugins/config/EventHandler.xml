@@ -22,5 +22,10 @@
  <action-handler sync="TRUE" order="1002" name="NotifyUserPasswordChanged"
                  operation="CHANGE_PASSWORD" entity-type="User"
                  class="com.icsynergy.processplugins.NotifyUserPasswordChanged"
-                 stage="postprocess"/>
+                 stage="postprocess"/>           
+ <action-handler sync="TRUE" order="1001"
+                 name="RoleNameChangedHandler"
+                 operation="MODIFY" entity-type="Role"
+                 class="com.icsynergy.processplugins.RoleNameChangedHandler"
+                 stage="postprocess"/>                              
 </eventhandlers>

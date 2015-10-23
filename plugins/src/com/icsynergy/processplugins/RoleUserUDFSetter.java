@@ -1,10 +1,10 @@
 package com.icsynergy.processplugins;
 
+
 import com.icsynergy.helpers.csf.CsfAccessor;
 
 import java.io.Serializable;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,6 +30,7 @@ import oracle.iam.platform.Platform;
 import oracle.iam.platform.authopss.api.AdminRoleService;
 import oracle.iam.platform.authopss.vo.AdminRole;
 import oracle.iam.platform.authopss.vo.AdminRoleMembership;
+import oracle.iam.platform.context.ContextManager;
 import oracle.iam.platform.entitymgr.vo.SearchCriteria;
 import oracle.iam.platform.kernel.spi.PostProcessHandler;
 import oracle.iam.platform.kernel.vo.AbstractGenericOrchestration;
@@ -56,50 +56,67 @@ public class RoleUserUDFSetter implements PostProcessHandler {
 
     List<String> lstUsrKeys = (List<String>) map.get("userKeys");
 
-    List<String> arstrRoleKeys = null;
+    Set<String> setRoleKeys = new HashSet<>();
     if (map.containsKey("roleKey")) {
       String strRoleKey = map.get("roleKey").toString();
-      arstrRoleKeys = new ArrayList<String>();
-      arstrRoleKeys.add(strRoleKey);
+      setRoleKeys.add(strRoleKey);
     } 
     else if (map.containsKey("roleKeys")) {
-      arstrRoleKeys = (List<String>) map.get("roleKeys");
+      setRoleKeys = new HashSet<>((List<String>) map.get("roleKeys"));
     }
 
     logger.finest("User Keys: " + lstUsrKeys.toString());
-    logger.finest("Role keys: " + arstrRoleKeys == null ? null : arstrRoleKeys.toString());
+    logger.finest("Role keys: " + setRoleKeys.toString());
     
-    OIMClient oimClient = null;  
-    // log into the system    
-    try {
-			logger.finest("Logging in...");
-			CsfAccessor credReader = new CsfAccessor();
-			PasswordCredential creds = credReader.readCredentialsfromCsf("oim", "sysadmin");
-        
-      String strOimUserName = creds.getName();
-      String strOimPassword = new String(creds.getPassword());
-
-			SystemConfigurationService cfgServ = 
-				Platform.getService(SystemConfigurationService.class);
-      String strURL =
-        cfgServ.getSystemPropertiesForUnauthenticatedUsers(OIMURL)
-        .getPtyValue();
-      
-      Hashtable env = new Hashtable();
-      env.put(OIMClient.JAVA_NAMING_FACTORY_INITIAL, "weblogic.jndi.WLInitialContextFactory");
-      env.put(OIMClient.JAVA_NAMING_PROVIDER_URL, strURL);
-      oimClient = new OIMClient(env);    
-      
-      oimClient.login(strOimUserName, strOimPassword.toCharArray());
-      logger.finest("Logged in");
-    } catch (Exception e) {
-      logger.log(Level.SEVERE, "Can't log in", e);
-      return new EventResult();
-    }
+    UserManager usrMgr;
+    RoleManager roleMgr;
+    
+    // if REQUEST context -> login and get all manager classes
+    if ("<anonymous>".equalsIgnoreCase(ContextManager.getOrigUser())) {
+      OIMClient oimClient = null;  
+      // log into the system    
+      try {
+        logger.finest("Logging in...");
+        PasswordCredential creds = CsfAccessor.readCredentialsfromCsf("oim", "sysadmin");
+          
+        String strOimUserName = creds.getName();
+        String strOimPassword = new String(creds.getPassword());
   
-    UserManager usrMgr = oimClient.getService(UserManager.class);    
-    RoleManager roleMgr = oimClient.getService(RoleManager.class);
-
+        SystemConfigurationService cfgServ = 
+          Platform.getService(SystemConfigurationService.class);
+        String strURL =
+          cfgServ.getSystemPropertiesForUnauthenticatedUsers(OIMURL)
+          .getPtyValue();
+        
+        Hashtable env = new Hashtable();
+        env.put(OIMClient.JAVA_NAMING_FACTORY_INITIAL, "weblogic.jndi.WLInitialContextFactory");
+        env.put(OIMClient.JAVA_NAMING_PROVIDER_URL, strURL);
+        oimClient = new OIMClient(env);    
+        
+        oimClient.login(strOimUserName, strOimPassword.toCharArray());
+        logger.finest("Logged in");
+      } catch (Exception e) {
+        logger.log(Level.SEVERE, "Can't log in", e);
+        return new EventResult();
+      }
+    
+      usrMgr = oimClient.getService(UserManager.class);    
+      roleMgr = oimClient.getService(RoleManager.class);
+    } else {
+      usrMgr = 
+        Platform.getServiceForEventHandlers(UserManager.class 
+                                            , ContextManager.getContextKey()
+                                            , ContextManager.getContextType().toString()
+                                            , ContextManager.getContextSubType()
+                                            , ContextManager.getAllValuesFromCurrentContext());
+      roleMgr = 
+        Platform.getServiceForEventHandlers(RoleManager.class 
+                                          , ContextManager.getContextKey()
+                                          , ContextManager.getContextType().toString()
+                                          , ContextManager.getContextSubType()
+                                          , ContextManager.getAllValuesFromCurrentContext());
+    }
+    
     // get user's current GrpIDs and GrpName to modify them
     Set<String> setAttr = new HashSet<String>();
     
@@ -135,7 +152,7 @@ public class RoleUserUDFSetter implements PostProcessHandler {
       setAttr.add(RoleManagerConstants.RoleAttributeName.DESCRIPTION.getId());
 
       // for each role get its description and name
-      for (String strRoleKey : arstrRoleKeys) {
+      for (String strRoleKey : setRoleKeys) {
         Role role;
         try {
           role = roleMgr.getDetails(strRoleKey, setAttr);
@@ -270,6 +287,7 @@ public class RoleUserUDFSetter implements PostProcessHandler {
 	
   public BulkEventResult execute(long l, long l2,
                                  BulkOrchestration bulkOrchestration) {
+    logger.entering(TAG, "bulk execute");
     return new BulkEventResult();
   }
 

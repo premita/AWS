@@ -1,9 +1,8 @@
-SelfRegistrationApproval/SCA-INF/bpel
-SelfRegistrationApproval/SCA-INF/classes
-SelfRegistrationApproval/deploy
-OrgDeleteController/classes
-OrgReconTask/classes
-plugins/classes
-UsernamePolicy/classes
 .idea
-*.iml
+OrgDeleteController/classes/
+SelfRegistrationApproval/SCA-INF/bpel
+SelfRegistrationApprovalApp/SelfRegistrationApproval/SCA-INF/classes/
+SelfRegistrationApprovalApp/SelfRegistrationApproval/deploy/
+UsernamePolicy/classes/
+**/classes/
+**/*.iml

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<oimplugins>
+ <plugins pluginpoint="oracle.iam.platform.kernel.spi.EventHandler">
+  <plugin pluginclass="com.icsynergy.processplugins.OrgNameChangedHandler"
+          version="1.0" name="OrgNameChangedHandler"/>
+ </plugins>
+</oimplugins>
