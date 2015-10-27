@@ -14,6 +14,7 @@ import java.sql.Statement;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import oracle.iam.identity.exception.*;
 import oracle.iam.identity.orgmgmt.api.OrganizationManager;
@@ -193,19 +194,30 @@ public class OrgReconTask extends TaskSupport {
                                 strDefaultAdminRoleName, setAttrs);
         String strDefaultAdminRoleKey = roleDefaultAdmin.getEntityId();
 
-        // query DB view and cycle through records
+        m_logger.finest("querying DB view and cycle through records");
         try (
           Statement stmt = conn.createStatement();
           ResultSet rs = stmt.executeQuery(SQL))
         {
           // cycle through all DB records
             while (rs.next()) {
+                m_logger.finer(
+                        String.format(
+                                "processing record: MGName=%s MGId=%s MGPin=%s MGEmail=%s",
+                                rs.getString(MG), rs.getString(MGID), rs.getString(MGPIN), rs.getString(MGCERTIFIER)));
+
                 String certUserKey = null;
 
                 if (! (rs.getString(MGCERTIFIER) == null || rs.getString(MGCERTIFIER).isEmpty()) ) {
                     // find certifier user in OIM
                     try {
                         String certifierEmail = rs.getString(MGCERTIFIER);
+
+                        if (!certifierEmail.contains("@")) {
+                            m_logger.warning("No @ found in certifier's email");
+                            throw new UserLookupException("No @ found in certifier's email", "ICS-001");
+                        }
+
                         String certifierLogin =
                                 certifierEmail.substring(0, certifierEmail.indexOf('@'));
 
@@ -855,6 +867,7 @@ public class OrgReconTask extends TaskSupport {
         // attach data
         HashMap<String,Object> map = new HashMap<>();
         map.put("message", strNotification);
+        map.put("act_key", 1);
         event.setParams(map);
 
         try {
