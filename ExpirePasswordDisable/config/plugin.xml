@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<oimplugins>
+    <plugins pluginpoint="oracle.iam.scheduler.vo.TaskSupport">
+        <plugin pluginclass="com.icsynergy.expirePasswordDisable"
+                version="1.0" name="expirePasswordDisable"/>
+    </plugins>
+</oimplugins>

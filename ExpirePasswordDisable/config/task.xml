@@ -1,0 +1,11 @@
+<scheduledTasks xmlns="http://xmlns.oracle.com/oim/scheduler">
+    <task>
+        <name>Disable Expired Password</name>
+        <class>com.icsynergy.expirePasswordDisable</class>
+        <description>Disables the account of users that have an expired password</description>
+        <retry>5</retry>
+        <parameters>
+            <string-param required="true" helpText="Amount of days after to wait before disable">Period</string-param>
+        </parameters>
+    </task>
+</scheduledTasks>
