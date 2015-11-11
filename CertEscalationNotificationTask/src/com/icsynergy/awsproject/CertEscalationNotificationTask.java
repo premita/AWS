@@ -1,19 +1,24 @@
 package com.icsynergy.awsproject;
 
+import Thor.API.Exceptions.tcAPIException;
+import Thor.API.Operations.tcLookupOperationsIntf;
 import com.icsynergy.helpers.csf.CsfAccessor;
 import oracle.bpel.services.workflow.WorkflowException;
 import oracle.bpel.services.workflow.client.IWorkflowServiceClient;
 import oracle.bpel.services.workflow.client.IWorkflowServiceClientConstants;
 import oracle.bpel.services.workflow.client.WorkflowServiceClientFactory;
 import oracle.bpel.services.workflow.query.ITaskQueryService;
-import oracle.bpel.services.workflow.query.ejb.TaskQueryServiceBean;
 import oracle.bpel.services.workflow.repos.Predicate;
 import oracle.bpel.services.workflow.repos.Ordering;
 import oracle.bpel.services.workflow.repos.TableConstants;
+import oracle.bpel.services.workflow.task.model.IdentityType;
 import oracle.bpel.services.workflow.task.model.Task;
 import oracle.bpel.services.workflow.verification.IWorkflowContext;
 import oracle.iam.identity.usermgmt.api.UserManager;
 import oracle.iam.identity.usermgmt.vo.User;
+import oracle.iam.notification.api.NotificationService;
+import oracle.iam.notification.exception.*;
+import oracle.iam.notification.vo.NotificationEvent;
 import oracle.iam.platform.Platform;
 import oracle.iam.platform.kernel.EventFailedException;
 import oracle.iam.scheduler.vo.TaskSupport;
@@ -31,6 +36,9 @@ public class CertEscalationNotificationTask extends TaskSupport {
 
     IWorkflowContext wfCtx;
     ITaskQueryService querySvc;
+    NotificationService notificationService = Platform.getService(NotificationService.class);
+
+    String strNotificationTemplateName;
 
     @Override
     public void execute(HashMap hashMap) throws Exception {
@@ -41,36 +49,83 @@ public class CertEscalationNotificationTask extends TaskSupport {
 
         UserManager usrMgr = Platform.getService(UserManager.class);
 
+        log.finest("getting running certifications...");
         List<Task> lstTask = getActiveCertifications();
+
+        log.finest("iterating through the list of active certifications...");
+
         for (Task task: lstTask) {
+            log.finest("processing task: " + task.getSystemAttributes());
+
+            log.finest("checking if we're stopped");
             if (isStop()) {
                 log.fine("job is stopped, exiting...");
                 return;
             }
-            // check if now > half task length
-           if ((task.getSystemAttributes().getExpirationDate().getTimeInMillis()
-                   - task.getSystemAttributes().getAssignedDate().getTimeInMillis())/2 <= new Date().getTime()) {
-               String strAssignee = String.valueOf(task.getSystemAttributes().getAssignees().get(0));
-               log.finest("task assignee: " + strAssignee);
 
-               log.finest("getting user details...");
-               User usr = usrMgr.getDetails(strAssignee, null, true);
-               log.finest("user's manager key: " + usr.getManagerKey());
+            long assignedDate = task.getSystemAttributes().getAssignedDate().getTimeInMillis();
+            log.finest("start: " + assignedDate);
 
-               log.finest("getting manager details...");
-               User mgr = usrMgr.getDetails(usr.getManagerKey(), null, false);
-               log.finest("manager login: " + mgr.getLogin());
+            long now = new Date().getTime();
+            log.finest("now: " + now);
 
-               sendEscalationNotification(mgr);
-           }
+            long expirationDate =
+                    task.getSystemAttributes().getExpirationDate() == null ?
+                            now :
+                            task.getSystemAttributes().getExpirationDate().getTimeInMillis();
+            log.finest("expiration: " + expirationDate);
+
+            log.finest("checking if half of certification time has passed");
+            if ((expirationDate + assignedDate) / 2 <= now) {
+
+                IdentityType identity = (IdentityType) task.getSystemAttributes().getAssignees().get(0);
+                String strAssignee = identity.getId();
+                log.finest("task assignee: " + strAssignee);
+
+                log.finest("getting user details...");
+                User usr = usrMgr.getDetails(strAssignee, null, true);
+                log.finest("user's manager key: " + usr.getManagerKey());
+
+                log.finest("getting manager details...");
+                User mgr = usrMgr.getDetails(usr.getManagerKey(), null, false);
+                log.finest("manager login: " + mgr.getLogin());
+
+                sendEscalationNotification(mgr, usr, expirationDate);
+            }
         }
-
 
         log.exiting(this.getClass().getName(), "execute");
     }
 
-    private void sendEscalationNotification(User mgr) {
+    private void sendEscalationNotification(User mgr, User assignee, long expDate) {
         log.finest(">> sendEscalationNotification: " + mgr.getLogin());
+
+        NotificationEvent event = new NotificationEvent();
+
+        log.finest("setting recepient");
+        String[] arTo = { mgr.getLogin() };
+        event.setUserIds(arTo);
+
+        event.setTemplateName(strNotificationTemplateName);
+
+        log.finest("prepping event map");
+        HashMap<String, Object> map = new HashMap<>();
+        map.put("mgr_disp_name", mgr.getDisplayName());
+        map.put("emp_disp_name", assignee.getDisplayName());
+        map.put("exp_date", new Date(expDate).toString());
+        //fake one
+        map.put("act_key", 1);
+        event.setParams(map);
+
+        try {
+            notificationService.notify(event);
+            log.fine("escalation notification sent");
+        } catch (NotificationException | UserDetailsNotFoundException | NotificationResolverNotFoundException |
+                MultipleTemplateException | TemplateNotFoundException | UnresolvedNotificationDataException |
+                EventException e) {
+            log.severe("Exception sending notification: " + e.getMessage());
+        }
+
         log.finest("<< sendEscalationNotification: " + mgr.getLogin());
     }
 
@@ -84,18 +139,27 @@ public class CertEscalationNotificationTask extends TaskSupport {
 
     }
 
-    private void init() {
+    private void init() throws tcAPIException {
         try {
             log.finest(">> init");
+
+            log.finest("getting notification template name");
+            tcLookupOperationsIntf lookupIf = Platform.getService(tcLookupOperationsIntf.class);
+            strNotificationTemplateName =
+                    lookupIf.getDecodedValueForEncodedValue(
+                            "Lookup.AWS.Configuration",
+                            "cert.escalation.warning.template");
+            log.finest("notification template: " + strNotificationTemplateName);
+
+            if (strNotificationTemplateName.isEmpty()) {
+                throw new EventFailedException("Notification template name is empty");
+            }
 
             log.finest("getting initial context...");
             InitialContext ctx = new InitialContext();
 
             log.finest("looking up MBeanServer interface...");
             MBeanServer server = (MBeanServer) ctx.lookup("java:comp/env/jmx/runtime");
-
-            log.finest("getting task query service bean");
-            TaskQueryServiceBean bean = (TaskQueryServiceBean) ctx.lookup("ejb/bpel/services/workflow/TaskQueryService");
 
             ObjectName objName = new ObjectName("oracle.iam:name=SOAConfig,type=XMLConfig.SOAConfig,XMLConfig=Config," + "Application=oim,ApplicationVersion=11.1.2.0.0");
 
@@ -109,9 +173,6 @@ public class CertEscalationNotificationTask extends TaskSupport {
 
             String strSOAUserName = creds.getName();
             String strSOAPassword = new String(creds.getPassword());
-
-            log.finest("authenticating through bean");
-            wfCtx = bean.authenticate(strSOAUserName, strSOAPassword.toCharArray(), "jazn.com");
 
             Map<IWorkflowServiceClientConstants.CONNECTION_PROPERTY, String> properties = new HashMap<>();
             properties.put(IWorkflowServiceClientConstants.CONNECTION_PROPERTY.CLIENT_TYPE, WorkflowServiceClientFactory.REMOTE_CLIENT);
