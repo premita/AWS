@@ -1,0 +1,9 @@
+<scheduledTasks xmlns="http://xmlns.oracle.com/oim/scheduler">
+    <task>
+        <name>Certification Notification</name>
+        <class>com.icsynergy.awsproject.CertEscalationNotificationTask</class>
+        <description>Sends notification to a certifier manager</description>
+        <retry>0</retry>
+    </task>
+</scheduledTasks>
+

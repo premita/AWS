@@ -1,0 +1,12 @@
+<scheduledTasks xmlns="http://xmlns.oracle.com/oim/scheduler">
+    <task>
+        <name>Certification Reminder Notification</name>
+        <class>com.icsynergy.awsproject.CertReminderNotificationTask</class>
+        <description>Sends notification to a certifier manager</description>
+        <retry>0</retry>
+        <parameters>
+            <number-param required="true" helpText="Days after task assignment">Days Since Start</number-param>
+            <string-param required="true" helpText="Template name to use while notifying">Template Name</string-param>
+        </parameters>
+    </task>
+</scheduledTasks>
