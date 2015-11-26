@@ -27,6 +27,7 @@ import oracle.security.jps.service.credstore.PasswordCredential;
 import javax.management.*;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -49,13 +50,18 @@ public class CertEscalationNotificationTask extends TaskSupport {
 
         UserManager usrMgr = Platform.getService(UserManager.class);
 
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+        Calendar now = Calendar.getInstance();
+        log.finest("now: " + dateFormat.format(now.getTime()));
+
         log.finest("getting running certifications...");
         List<Task> lstTask = getActiveCertifications();
 
         log.finest("iterating through the list of active certifications...");
 
         for (Task task: lstTask) {
-            log.finest("processing task: " + task.getSystemAttributes());
+            log.finest("processing task: " + task.getTitle());
 
             log.finest("checking if we're stopped");
             if (isStop()) {
@@ -63,20 +69,24 @@ public class CertEscalationNotificationTask extends TaskSupport {
                 return;
             }
 
-            long assignedDate = task.getSystemAttributes().getAssignedDate().getTimeInMillis();
-            log.finest("start: " + assignedDate);
+            Calendar assignedDate = task.getSystemAttributes().getAssignedDate();
+            log.finest("start: " + dateFormat.format(assignedDate.getTime()));
 
-            long now = new Date().getTime();
-            log.finest("now: " + now);
+            Calendar expirationDate = task.getSystemAttributes().getExpirationDate();
+            log.finest("expiration: " + dateFormat.format(expirationDate.getTime()));
 
-            long expirationDate =
-                    task.getSystemAttributes().getExpirationDate() == null ?
-                            now :
-                            task.getSystemAttributes().getExpirationDate().getTimeInMillis();
-            log.finest("expiration: " + expirationDate);
+            if (expirationDate == null) {
+                log.fine("expiration date is not set, skipping the task...");
+                continue;
+            }
 
-            log.finest("checking if half of certification time has passed");
-            if ((expirationDate + assignedDate) / 2 <= now) {
+            // notification = (start + expiration)/2
+            Calendar notificationDate = Calendar.getInstance();
+            notificationDate.setTime(new Date((assignedDate.getTimeInMillis() + expirationDate.getTimeInMillis())/2));
+            log.finest("notification: " + dateFormat.format(notificationDate.getTime()));
+
+            log.finest("checking if it's a notification date");
+            if (compare(now, notificationDate) == 0) {
 
                 IdentityType identity = (IdentityType) task.getSystemAttributes().getAssignees().get(0);
                 String strAssignee = identity.getId();
@@ -90,7 +100,7 @@ public class CertEscalationNotificationTask extends TaskSupport {
                 User mgr = usrMgr.getDetails(usr.getManagerKey(), null, false);
                 log.finest("manager login: " + mgr.getLogin());
 
-                sendEscalationNotification(mgr, usr, expirationDate);
+                sendEscalationNotification(mgr, usr, expirationDate.getTimeInMillis());
             }
         }
 
@@ -194,9 +204,9 @@ public class CertEscalationNotificationTask extends TaskSupport {
     }
 
     /**
-     * Retrieves from WorkflowInterface a request approver for a given request id
+     * Retrieves a list of active certifications
      *
-     * @return strLogin on success, empty string otherwise
+     * @return List of Tasks
      */
     private List<Task> getActiveCertifications() {
         log.finest(">> getActiveCertifications");
@@ -229,5 +239,21 @@ public class CertEscalationNotificationTask extends TaskSupport {
             log.log(Level.SEVERE, "Exception", e);
             throw new EventFailedException(e.getMessage(), e.getErrorArgs(), e.getCause());
         }
+    }
+
+    /**
+     * Compares Calendar objects
+     * @param c1 First Calendar object
+     * @param c2 Second Calendar object
+     * @return difference of two objects
+     */
+    private int compare(Calendar c1, Calendar c2) {
+        if (c1.get(Calendar.YEAR) != c2.get(Calendar.YEAR))
+            return c1.get(Calendar.YEAR) - c2.get(Calendar.YEAR);
+
+        if (c1.get(Calendar.MONTH) != c2.get(Calendar.MONTH))
+            return c1.get(Calendar.MONTH) - c2.get(Calendar.MONTH);
+
+        return c1.get(Calendar.DAY_OF_MONTH) - c2.get(Calendar.DAY_OF_MONTH);
     }
 }
