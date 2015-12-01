@@ -1,7 +1,5 @@
 package com.icsynergy.awsproject;
 
-import Thor.API.Exceptions.tcAPIException;
-import Thor.API.Operations.tcLookupOperationsIntf;
 import com.icsynergy.helpers.csf.CsfAccessor;
 import oracle.bpel.services.workflow.WorkflowException;
 import oracle.bpel.services.workflow.client.IWorkflowServiceClient;
@@ -27,12 +25,11 @@ import oracle.security.jps.service.credstore.PasswordCredential;
 import javax.management.*;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class CertEscalationNotificationTask extends TaskSupport {
+public class CertReminderNotificationTask extends TaskSupport {
     Logger log = Logger.getLogger(this.getClass().getCanonicalName());
 
     IWorkflowContext wfCtx;
@@ -43,17 +40,24 @@ public class CertEscalationNotificationTask extends TaskSupport {
 
     @Override
     public void execute(HashMap hashMap) throws Exception {
-
         log.entering(this.getClass().getName(), "execute");
 
+        log.finer("checking task parameters...");
+
+        strNotificationTemplateName = String.valueOf(hashMap.get("Template Name"));
+        log.finest("notification template parameter: " + strNotificationTemplateName);
+
+        if (strNotificationTemplateName.isEmpty()) {
+            throw new EventFailedException("Notification template name is empty");
+        }
+
+        int iDays = Integer.valueOf(String.valueOf(hashMap.get("Days Since Start")));
+        log.finest("days since assignment parameter: " + iDays);
+
+        log.finer("initiating task query service");
         init();
 
         UserManager usrMgr = Platform.getService(UserManager.class);
-
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-
-        Calendar now = Calendar.getInstance();
-        log.finest("now: " + dateFormat.format(now.getTime()));
 
         log.finest("getting running certifications...");
         List<Task> lstTask = getActiveCertifications();
@@ -61,7 +65,7 @@ public class CertEscalationNotificationTask extends TaskSupport {
         log.finest("iterating through the list of active certifications...");
 
         for (Task task: lstTask) {
-            log.finest("processing task: " + task.getTitle());
+            log.finest("processing task: " + task.getIdentificationKey());
 
             log.finest("checking if we're stopped");
             if (isStop()) {
@@ -69,24 +73,20 @@ public class CertEscalationNotificationTask extends TaskSupport {
                 return;
             }
 
-            Calendar assignedDate = task.getSystemAttributes().getAssignedDate();
-            log.finest("start: " + dateFormat.format(assignedDate.getTime()));
+            log.finer("checking task dates...");
 
-            Calendar expirationDate = task.getSystemAttributes().getExpirationDate();
-            log.finest("expiration: " + dateFormat.format(expirationDate.getTime()));
+            Calendar calAssigned = task.getSystemAttributes().getAssignedDate();
+            log.finest("start: " + calAssigned.toString());
 
-            if (expirationDate == null) {
-                log.fine("expiration date is not set, skipping the task...");
-                continue;
-            }
+            log.finest("now: " + new Date().toString());
 
-            // notification = (start + expiration)/2
-            Calendar notificationDate = Calendar.getInstance();
-            notificationDate.setTime(new Date((assignedDate.getTimeInMillis() + expirationDate.getTimeInMillis())/2));
-            log.finest("notification: " + dateFormat.format(notificationDate.getTime()));
+            // redefine calAssigned as calAssigned + iDays
+            calAssigned.add(Calendar.DAY_OF_MONTH, iDays);
+            log.finest("date of notification: " + calAssigned.toString());
 
-            log.finest("checking if it's a notification date");
-            if (compare(now, notificationDate) == 0) {
+            if (compare(Calendar.getInstance(), calAssigned) == 0) {
+                log.finest("now is the notification date");
+
                 IdentityType identity = (IdentityType) task.getSystemAttributes().getAssignees().get(0);
                 String strAssignee = identity.getId();
                 log.finest("task assignee: " + strAssignee);
@@ -95,33 +95,28 @@ public class CertEscalationNotificationTask extends TaskSupport {
                 User usr = usrMgr.getDetails(strAssignee, null, true);
                 log.finest("user's manager key: " + usr.getManagerKey());
 
-                log.finest("getting manager details...");
-                User mgr = usrMgr.getDetails(usr.getManagerKey(), null, false);
-                log.finest("manager login: " + mgr.getLogin());
-
-                sendEscalationNotification(mgr, usr, expirationDate.getTimeInMillis());
+                sendEscalationNotification(usr, task.getSystemAttributes().getExpirationDate());
             }
         }
 
         log.exiting(this.getClass().getName(), "execute");
     }
 
-    private void sendEscalationNotification(User mgr, User assignee, long expDate) {
-        log.finest(">> sendEscalationNotification: " + mgr.getLogin());
+    private void sendEscalationNotification(User assignee, Calendar expDate) {
+        log.finest(">> sendEscalationNotification: " + assignee.getLogin());
 
         NotificationEvent event = new NotificationEvent();
 
         log.finest("setting recepient");
-        String[] arTo = { mgr.getLogin() };
+        String[] arTo = { assignee.getLogin() };
         event.setUserIds(arTo);
 
         event.setTemplateName(strNotificationTemplateName);
 
         log.finest("prepping event map");
         HashMap<String, Object> map = new HashMap<>();
-        map.put("mgr_disp_name", mgr.getDisplayName());
         map.put("emp_disp_name", assignee.getDisplayName());
-        map.put("exp_date", new Date(expDate).toString());
+        map.put("exp_date", expDate.getTime().toString());
         //fake one
         map.put("act_key", 1);
         event.setParams(map);
@@ -135,7 +130,7 @@ public class CertEscalationNotificationTask extends TaskSupport {
             log.severe("Exception sending notification: " + e.getMessage());
         }
 
-        log.finest("<< sendEscalationNotification: " + mgr.getLogin());
+        log.finest("<< sendEscalationNotification: " + assignee.getLogin());
     }
 
     @Override
@@ -148,21 +143,9 @@ public class CertEscalationNotificationTask extends TaskSupport {
 
     }
 
-    private void init() throws tcAPIException {
+    private void init() {
         try {
             log.finest(">> init");
-
-            log.finest("getting notification template name");
-            tcLookupOperationsIntf lookupIf = Platform.getService(tcLookupOperationsIntf.class);
-            strNotificationTemplateName =
-                    lookupIf.getDecodedValueForEncodedValue(
-                            "Lookup.AWS.Configuration",
-                            "cert.escalation.warning.template");
-            log.finest("notification template: " + strNotificationTemplateName);
-
-            if (strNotificationTemplateName.isEmpty()) {
-                throw new EventFailedException("Notification template name is empty");
-            }
 
             log.finest("getting initial context...");
             InitialContext ctx = new InitialContext();
@@ -203,9 +186,9 @@ public class CertEscalationNotificationTask extends TaskSupport {
     }
 
     /**
-     * Retrieves a list of active certifications
+     * Retrieves from WorkflowInterface a request approver for a given request id
      *
-     * @return List of Tasks
+     * @return strLogin on success, empty string otherwise
      */
     private List<Task> getActiveCertifications() {
         log.finest(">> getActiveCertifications");
@@ -227,6 +210,7 @@ public class CertEscalationNotificationTask extends TaskSupport {
             queryColumns.add(TableConstants.WFTASK_ASSIGNEDDATE_COLUMN.getName());
             queryColumns.add(TableConstants.WFTASK_EXPIRATIONDATE_COLUMN.getName());
             queryColumns.add(TableConstants.WFTASK_ASSIGNEES_COLUMN.getName());
+            queryColumns.add(TableConstants.WFTASK_IDENTIFICATIONKEY_COLUMN.getName());
             log.finest("list: " + queryColumns.toString());
 
             log.finest("querying and exiting...");
@@ -240,12 +224,6 @@ public class CertEscalationNotificationTask extends TaskSupport {
         }
     }
 
-    /**
-     * Compares Calendar objects
-     * @param c1 First Calendar object
-     * @param c2 Second Calendar object
-     * @return difference of two objects
-     */
     private int compare(Calendar c1, Calendar c2) {
         if (c1.get(Calendar.YEAR) != c2.get(Calendar.YEAR))
             return c1.get(Calendar.YEAR) - c2.get(Calendar.YEAR);
