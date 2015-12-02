@@ -43,8 +43,19 @@ public class CertEscalationNotificationTask extends TaskSupport {
 
     @Override
     public void execute(HashMap hashMap) throws Exception {
-
         log.entering(this.getClass().getName(), "execute");
+
+        log.finer("checking task parameters...");
+
+        strNotificationTemplateName = String.valueOf(hashMap.get("Template Name"));
+        log.finest("notification template parameter: " + strNotificationTemplateName);
+
+        if (strNotificationTemplateName.isEmpty()) {
+            throw new EventFailedException("Notification template name is empty");
+        }
+
+        int iDays = Integer.valueOf(String.valueOf(hashMap.get("Days Since Start")));
+        log.finest("days since assignment parameter: " + iDays);
 
         init();
 
@@ -72,21 +83,14 @@ public class CertEscalationNotificationTask extends TaskSupport {
             Calendar assignedDate = task.getSystemAttributes().getAssignedDate();
             log.finest("start: " + dateFormat.format(assignedDate.getTime()));
 
+            // calculate notification date
+            assignedDate.add(Calendar.DAY_OF_MONTH, iDays);
+            log.finest("date of notification: " + dateFormat.format(assignedDate.getTime()));
+
             Calendar expirationDate = task.getSystemAttributes().getExpirationDate();
-            log.finest("expiration: " + dateFormat.format(expirationDate.getTime()));
-
-            if (expirationDate == null) {
-                log.fine("expiration date is not set, skipping the task...");
-                continue;
-            }
-
-            // notification = (start + expiration)/2
-            Calendar notificationDate = Calendar.getInstance();
-            notificationDate.setTime(new Date((assignedDate.getTimeInMillis() + expirationDate.getTimeInMillis())/2));
-            log.finest("notification: " + dateFormat.format(notificationDate.getTime()));
 
             log.finest("checking if it's a notification date");
-            if (compare(now, notificationDate) == 0) {
+            if (compare(Calendar.getInstance(), assignedDate) == 0) {
                 IdentityType identity = (IdentityType) task.getSystemAttributes().getAssignees().get(0);
                 String strAssignee = identity.getId();
                 log.finest("task assignee: " + strAssignee);
