@@ -43,7 +43,7 @@
 </binding>
 <service name="CallbackService">
 <port name="CallbackServicePort" binding="tns:CallbackServicePortBinding">
-<soap:address location="localhost"/>
+<soap:address location="https://iamdev.corp.wayport.net:14001/workflowservice/CallbackService"/>
 </port>
 </service>
   <plnk:partnerLinkType name="CallbackService_PL">

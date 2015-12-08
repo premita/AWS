@@ -362,22 +362,21 @@ if ( org_pin != "" ) {
         </bpelx:exec>
         <assign name="AssignRequestWSURL"
                 xmlns="http://schemas.xmlsoap.org/ws/2003/03/business-process/">
-      
-      
-      
-   <copy>
-         <from><EndpointReference xmlns="http://www.w3.org/2005/08/addressing"><Address/>
-                    </EndpointReference>
-              </from>
-         <to variable="partnerLink"/>
-      </copy><copy>
-         <from expression="concat(substring-before(bpws:getVariableData('inputVariable','payload','/ns3:process/ns4:url'),'workflowservice'),'reqsvc/reqsvc')"/>
-         <to variable="partnerLink"
-             query="/ns14:EndpointReference/ns14:Address"/>
-      </copy><copy>
-         <from variable="partnerLink"/>
-         <to partnerLink="RequestWSPartnerLink"/>
-      </copy></assign>
+            <copy>
+                <from><EndpointReference xmlns="http://www.w3.org/2005/08/addressing"><Address/>
+                    </EndpointReference></from>
+                <to variable="partnerLink"/>
+            </copy>
+            <copy>
+                <from expression="concat(substring-before(bpws:getVariableData('inputVariable','payload','/ns3:process/ns4:url'),'workflowservice'),'reqsvc/reqsvc')"/>
+                <to variable="partnerLink"
+                    query="/ns14:EndpointReference/ns14:Address"/>
+            </copy>
+            <copy>
+                <from variable="partnerLink"/>
+                <to partnerLink="RequestWSPartnerLink"/>
+            </copy>
+        </assign>
         <!-- 
           Asynchronous callback to the requester. (Note: the callback location and correlation id is transparently handled using WS-addressing.)
         -->

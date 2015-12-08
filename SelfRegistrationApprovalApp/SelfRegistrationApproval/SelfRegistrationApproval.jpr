@@ -333,6 +333,10 @@
             <value n="id" v="Jps-manifest.jar"/>
             <value n="isJDK" v="false"/>
          </hash>
+         <hash>
+            <value n="id" v="JPS Designtime"/>
+            <value n="isJDK" v="false"/>
+         </hash>
       </list>
       <hash n="internalDefinitions">
          <list n="libraryDefinitions">
@@ -348,9 +352,9 @@
          </list>
       </hash>
       <hash n="jdkReference">
-         <url n="id" path="../../../../../Users/Philipp/AppData/Roaming/JDeveloper/system11.1.1.7.40.64.93/o.jdeveloper/1.6.0_45.jdk"/>
+         <url n="id" path="../../../../.jdeveloper/system11.1.1.7.40.64.93/o.jdeveloper/1.7.0_79.jdk"/>
          <value n="isJDK" v="true"/>
-         <value n="jdkVersion" v="1.6.0_45"/>
+         <value n="jdkVersion" v="1.7.0_91"/>
       </hash>
       <list n="libraryReferences">
          <hash>
@@ -375,6 +379,10 @@
          </hash>
          <hash>
             <value n="id" v="Jps-manifest.jar"/>
+            <value n="isJDK" v="false"/>
+         </hash>
+         <hash>
+            <value n="id" v="JPS Designtime"/>
             <value n="isJDK" v="false"/>
          </hash>
       </list>
