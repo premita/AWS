@@ -46,12 +46,13 @@
   </service>
   <component name="ApprovalProcess">
     <implementation.bpel src="ApprovalProcess.bpel"/>
-    <property name="bpel.preference.oimurl">t3://localhost:14000</property>
+    <property name="bpel.preference.oimurl">t3://iam-aus-e003.corp.wayport.net:14000</property>
     <property name="bpel.preference.useroimurlbase">http://iam-aus-e003.corp.wayport.net:14000</property>
     <property name="bpel.preference.emaillogo">https://qa-wsp.wayport.net/images/ATT_Wi-Fi_Solutions.png</property>
     <property name="bpel.preference.adminemail">AWSWSPDEV_Account_Support@attwifi.com</property>
-    <property name="bpel.preference.copyrightyear">2014</property>
+    <property name="bpel.preference.copyrightyear">2015</property>
     <property name="bpel.preference.emailsubjectsuffix">*** This is a test message from DEV OIM</property>
+		<property name="bpel.preference.DefaultRequestApprover">AWSApprovalAdmin</property>
   </component>
   <component name="ApprovalTask">
     <implementation.workflow src="ApprovalTask.task"/>
