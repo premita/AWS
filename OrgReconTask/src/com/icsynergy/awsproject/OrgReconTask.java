@@ -65,7 +65,8 @@ public class OrgReconTask extends TaskSupport {
     private static final String strSQLTemplate =
 //            "SELECT %s, %s, %s, %s FROM %s WHERE %s NOT IN (%s) GROUP BY %s, %s, %s, %s";
         "SELECT %s, %s, %s, max(%s) as %s FROM %s " +
-                "WHERE %s NOT IN (%s) AND %s is not null " +
+//                "WHERE %s NOT IN (%s) AND %s is not null " +
+                "WHERE %s NOT IN (%s) " +
                 "GROUP BY %s, %s, %s";
 
     // system variable to read IT resource name containing DB connection params from
@@ -121,14 +122,14 @@ public class OrgReconTask extends TaskSupport {
         else
             strFilterList = "0";
 
-//        "SELECT %s, %s, %s, max(%s) FROM %s " +
-//                "WHERE %s NOT IN (%s) AND %s is not null" +
+//        "SELECT %s, %s, %s, max(%s) as %s FROM %s " +
+//                "WHERE %s NOT IN (%s) " +
 //                "GROUP BY %s, %s, %s";
         // create final SQL statement
         String SQL =
                 String.format(
                         strSQLTemplate, MG, MGPIN, MGID, MGCERTIFIER, MGCERTIFIER,
-                        strTableName, MGID, strFilterList, MGCERTIFIER,
+                        strTableName, MGID, strFilterList,
                         MG, MGPIN, MGID);
         m_logger.finest("SQL statement: " + SQL);
 
@@ -532,6 +533,7 @@ public class OrgReconTask extends TaskSupport {
 
                         bPublish = !isRolePublishedToOrg( strRoleKey,
                                                   listOrgs.get(0).getEntityId() );
+                        m_logger.finest("is role published to the org: " + bPublish);
                     } else {
                         m_logger.severe("More than one role found with a name: " +
                                 ROLENAMEPREFIX + rs.getString(MGID));
@@ -552,6 +554,7 @@ public class OrgReconTask extends TaskSupport {
                     List<EntityPublication> lstEntPubToTop =
                             srv.listEntityPublicationInScope(
                                     PolicyConstants.Resources.ROLE, strRoleKey, strTopOrgId, false, null);
+                    m_logger.finest("lstEntPubToTop: " + lstEntPubToTop.toString());
 
                     if( lstEntPubToTop.size() == 1 )
                         lstUnpublish.add( lstEntPubToTop.get(0) );
@@ -629,6 +632,7 @@ public class OrgReconTask extends TaskSupport {
                         }
 
                         bPublish = ! isRolePublishedToOrg(strRoleKey, listOrgs.get(0).getEntityId());
+                        m_logger.finest("is role published to the org: " + bPublish);
                     } else {
                         m_logger.severe("More than one role found with a name: " +
                                 rs.getString(MG));
@@ -649,6 +653,7 @@ public class OrgReconTask extends TaskSupport {
                     lstEntPubToTop =
                             srv.listEntityPublicationInScope(
                                     PolicyConstants.Resources.ROLE, strRoleKey, strTopOrgId, false, null);
+                    m_logger.finest("lstEntPubToTop: " + lstEntPubToTop.toString());
 
                     if( lstEntPubToTop.size() == 1 )
                         lstUnpublish.add( lstEntPubToTop.get(0) );
