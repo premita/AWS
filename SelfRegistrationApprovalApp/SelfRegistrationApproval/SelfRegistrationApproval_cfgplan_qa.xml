@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SOAConfigPlan xmlns:jca="http://platform.integration.oracle/blocks/adapter/fw/metadata" xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:orawsp="http://schemas.oracle.com/ws/2006/01/policy" xmlns:edl="http://schemas.oracle.com/events/edl" xmlns="http://schemas.oracle.com/soa/configplan">
+   <composite name="SelfRegistrationApproval">
+      <!--Add search and replace rules for the import section of a composite
+	Example:
+	<searchReplace>
+		<search>http://my-dev-server</search>
+		<replace>http://my-test-server</replace>
+	<searchReplace>
+	<searchReplace>
+		<search>8888</search>
+		<replace>8889</replace>
+	<searchReplace>-->
+      <import>
+         <searchReplace>
+            <search/>
+            <replace/>
+         </searchReplace>
+      </import>
+      <service name="RequestApprovalService">
+         <!--Add search and replace rules for the binding properties-->
+         <binding type="ws">
+            <attribute name="port">
+               <replace>http://xmlns.oracle.com/ApprovalApp_jws/SelfRegistrationApproval/ApprovalProcess#wsdl.endpoint(approvalprocess_client_ep/ApprovalProcess_pt)</replace>
+            </attribute>
+            <property name="weblogic.wsee.wsat.transaction.flowOption">
+               <replace>NEVER</replace>
+            </property>
+         </binding>
+         <binding type="adf"/>
+         <callback>
+            <!--Add search and replace rules for the binding properties-->
+            <binding type="ws">
+               <attribute name="port">
+                  <replace>http://xmlns.oracle.com/ApprovalApp_jws/SelfRegistrationApproval/ApprovalProcess#wsdl.endpoint(approvalprocess_client_ep/ApprovalProcessCallback_pt)</replace>
+               </attribute>
+               <property name="keystore.recipient.alias">
+                  <replace>xell</replace>
+               </property>
+               <property name="javax.xml.ws.security.auth.username">
+                  <replace>weblogic</replace>
+               </property>
+            </binding>
+         </callback>
+      </service>
+      <!--Add search and replace rules for the component properties
+	For components and service/reference bindings, you can add policy references.
+	Example:
+	<component name="*">
+		<wsp:PolicyReference orawsp:category="management" orawsp:status="enabled" URI="oracle/log_policy"/>
+	</component>-->
+      <component name="ApprovalProcess">
+         <property name="bpel.preference.oimurl">
+            <replace>t3s://iamqa.corp.wayport.net:14001</replace>
+         </property>
+         <property name="bpel.preference.useroimurlbase">
+            <replace>https://iamqa.corp.wayport.net:14001</replace>
+         </property>
+         <property name="bpel.preference.emaillogo">
+            <replace>https://qa-wsp.wayport.net/images/ATT_Wi-Fi_Solutions.png</replace>
+         </property>
+         <property name="bpel.preference.adminemail">
+            <replace>AWSWSPQA_Account_Support@attwifi.com</replace>
+         </property>
+         <property name="bpel.preference.copyrightyear">
+            <replace>2015</replace>
+         </property>
+         <property name="bpel.preference.emailsubjectsuffix">
+            <replace>*** This is a test message from QA OIM</replace>
+         </property>
+      </component>
+      <reference name="CallbackService_2">
+         <!--Add search and replace rules for the binding properties-->
+         <binding type="ws">
+            <attribute name="port">
+               <replace>http://wls.ws.workflowservice.platform.iam.oracle/#wsdl.endpoint(CallbackService/CallbackServicePort)</replace>
+            </attribute>
+            <attribute name="location">
+               <replace>CallbackServiceDefinitions.wsdl</replace>
+            </attribute>
+            <property name="keystore.recipient.alias">
+               <replace>xell</replace>
+            </property>
+            <property name="javax.xml.ws.security.auth.username">
+               <replace>weblogic</replace>
+            </property>
+         </binding>
+      </reference>
+      <reference name="RequestWSPartnerLink">
+         <!--Add search and replace rules for the binding properties-->
+         <binding type="ws">
+            <attribute name="port">
+               <replace>http://xmlns.oracle.com/RequestServiceApp_jws/RequestDataService/RequestDataService#wsdl.endpoint(RequestDataService/RequestDataServicePort)</replace>
+            </attribute>
+            <attribute name="location">
+               <replace>requestdataservice.wsdl</replace>
+            </attribute>
+            <property name="csf-key">
+               <replace>OIMAdmin</replace>
+            </property>
+         </binding>
+      </reference>
+      <reference name="NotificationService1">
+         <binding type="wsif"/>
+      </reference>
+      <reference name="NotificationService1_2">
+         <binding type="wsif"/>
+      </reference>
+   </composite>
+   <!--To configure monitor.config: 
+	<property name="enabled"><replace>true</replace></property>
+	<property name="dataObjectsFolder"><searchReplace><search>mydev</search><replace>myproduction</replace></searchReplace></property>
+	
+	sample properties to configure for adapter: 
+	<jca:property name="QueueName"><replace>medmq1</replace></jca:property>
+	
+	To add search and replace rules for wsdls, xsd and jca files
+	Example:
+	<searchReplace>
+		<search>http://my-dev-server</search>
+		<replace>http://my-test-server</replace>
+	<searchReplace>
+	<searchReplace>
+		<search>8888</search>
+		<replace>8889</replace>
+	<searchReplace>
+	-->
+   <wsdlAndSchema name="xsd/ChallengeTaskPayload.xsd|xsd/ResourceData.xsd|xsd/wsaddr.xsd|xsd/ApprovalTaskWorkflowTask.xsd|xsd/AccountData.xsd|xsd/DocumentPackage.xsd|xsd/TaskStateMachine.xsd|xsd/CallbackFault.xsd|xsd/UserData.xsd|xsd/ChallengeTaskWorkflowTask.xsd|xsd/RequestDetails.xsd|xsd/RequestData.xsd|xsd/EntitlementData.xsd|xsd/OrgData.xsd|xsd/CatalogData.xsd|xsd/emailContract.xsd|xsd/BusinessRule.xsd|xsd/GeneralRequestData.xsd|xsd/ApprovalProcess.xsd|xsd/RoleData.xsd|xsd/FaultData.xsd|xsd/CallbackElements.xsd|xsd/ApprovalTaskPayload.xsd|xsd/ApplicationInstanceData.xsd|debugfile.wsdl|NotificationService.xsd|NotificationService.wsdl|ApprovalProcess.wsdl|debugfile_file.jca|CallbackServiceDefinitions.wsdl|requestdataservice.wsdl">
+      <searchReplace>
+         <search>iamdev.corp.wayport.net</search>
+         <replace>iamqa.corp.wayport.net</replace>
+      </searchReplace>
+   </wsdlAndSchema>
+</SOAConfigPlan>

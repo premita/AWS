@@ -262,7 +262,7 @@
     </wsdl:binding>
     <wsdl:service name="RequestDataService">
         <wsdl:port name="RequestDataServicePort" binding="client:RequestDataServiceBinding">
-            <soap:address location="REPLACE_BY_ACTUAL_URL"/>
+            <soap:address location="https://iamdev.corp.wayport.net/reqsvc/reqsvc"/>
         </wsdl:port>
     </wsdl:service>
 
