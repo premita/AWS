@@ -25,6 +25,7 @@ import oracle.security.jps.service.credstore.PasswordCredential;
 import javax.management.*;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -64,6 +65,8 @@ public class CertReminderNotificationTask extends TaskSupport {
 
         log.finest("iterating through the list of active certifications...");
 
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
         for (Task task: lstTask) {
             log.finest("processing task: " + task.getIdentificationKey());
 
@@ -76,13 +79,13 @@ public class CertReminderNotificationTask extends TaskSupport {
             log.finer("checking task dates...");
 
             Calendar calAssigned = task.getSystemAttributes().getAssignedDate();
-            log.finest("start: " + calAssigned.toString());
+            log.finest("start: " + dateFormat.format(calAssigned.getTime()));
 
-            log.finest("now: " + new Date().toString());
+            log.finest("now: " + dateFormat.format(new Date()));
 
             // redefine calAssigned as calAssigned + iDays
             calAssigned.add(Calendar.DAY_OF_MONTH, iDays);
-            log.finest("date of notification: " + calAssigned.toString());
+            log.finest("date of notification: " + dateFormat.format(calAssigned.getTime()));
 
             if (compare(Calendar.getInstance(), calAssigned) == 0) {
                 log.finest("now is the notification date");
