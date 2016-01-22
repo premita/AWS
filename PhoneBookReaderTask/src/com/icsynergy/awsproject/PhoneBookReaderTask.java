@@ -1,5 +1,6 @@
 package com.icsynergy.awsproject;
 
+import commonj.work.WorkManager;
 import oracle.iam.identity.orgmgmt.api.OrganizationManager;
 import oracle.iam.identity.orgmgmt.vo.Organization;
 import oracle.iam.identity.usermgmt.api.UserManager;
@@ -8,26 +9,28 @@ import oracle.iam.identity.usermgmt.vo.User;
 import oracle.iam.platform.Platform;
 import oracle.iam.platform.entitymgr.vo.SearchCriteria;
 import oracle.iam.scheduler.vo.TaskSupport;
+import weblogic.management.runtime.ExecuteThread;
 
+import javax.naming.InitialContext;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.concurrent.ForkJoinPool;
 import java.util.logging.Logger;
 
 public class PhoneBookReaderTask extends TaskSupport{
     @Override
     public void execute(HashMap hashMap) throws Exception {
+        final String strParamOrgName = "Organization Name";
+        final String strOrgNameEmpty = "Organization name is empty";
+
         Logger log = Logger.getLogger("com.icsynergy");
         log.entering(this.getClass().getCanonicalName() + " execute", hashMap.toString());
 
-        ResourceBundle resourceBundle = ResourceBundle.getBundle(this.getClass().getName());
-        String strOrgNameParam = resourceBundle.getString("param.org_name");
-        log.finer("param.org_name=" + strOrgNameParam);
-
         log.finest("getting organization name parameter");
-        String strOrgName = String.valueOf(hashMap.get(strOrgNameParam));
+        String strOrgName = String.valueOf(hashMap.get(strParamOrgName));
         if(strOrgName.isEmpty())
-            throw new Exception(resourceBundle.getString("exception.empty_org_name"));
+            throw new Exception(strOrgNameEmpty);
         log.finer("organization: " + strOrgName);
 
         OrganizationManager orgMgr = Platform.getService(OrganizationManager.class);
@@ -55,6 +58,14 @@ public class PhoneBookReaderTask extends TaskSupport{
 
         if (!lstUsr.isEmpty()) {
             log.finer("user list size: " + lstUsr.size());
+
+            log.finest("obtaining initial context");
+            InitialContext ic = new InitialContext();
+            WorkManager wm = (WorkManager) ic.lookup("java:comp/env/wm/default");
+
+            log.finest("creating fork/join pool and submitting a task");
+            ForkJoinPool pool = new ForkJoinPool();
+            pool.execute(new PhoneBookManagerRetriever(lstUsr));
         } else {
             log.fine("no active users found in the organization");
         }

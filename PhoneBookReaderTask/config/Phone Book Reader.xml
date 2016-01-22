@@ -1,0 +1,12 @@
+<scheduledTasks xmlns="http://xmlns.oracle.com/oim/scheduler">
+    <task>
+        <name>Phone Book Reader</name>
+        <class>com.icsynergy.awsproject.PhoneBookReaderTask</class>
+        <description>Run a verification task against ATT PhoneBook</description>
+        <retry>0</retry>
+        <parameters>
+            <string-param required="true" helpText="Organization to check users from">Organization Name</string-param>
+        </parameters>
+    </task>
+</scheduledTasks>
+
