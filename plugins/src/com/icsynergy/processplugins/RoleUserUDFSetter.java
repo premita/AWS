@@ -19,11 +19,13 @@ import java.util.regex.Pattern;
 import oracle.iam.conf.api.SystemConfigurationService;
 import oracle.iam.identity.exception.OrganizationManagerException;
 import oracle.iam.identity.orgmgmt.api.OrganizationManager;
+import oracle.iam.identity.orgmgmt.api.OrganizationManagerConstants;
 import oracle.iam.identity.orgmgmt.vo.Organization;
 import oracle.iam.identity.rolemgmt.api.RoleManager;
 import oracle.iam.identity.rolemgmt.api.RoleManagerConstants;
 import oracle.iam.identity.rolemgmt.vo.Role;
 import oracle.iam.identity.usermgmt.api.UserManager;
+import oracle.iam.identity.usermgmt.api.UserManagerConstants;
 import oracle.iam.identity.usermgmt.vo.User;
 import oracle.iam.platform.OIMClient;
 import oracle.iam.platform.Platform;
@@ -70,6 +72,7 @@ public class RoleUserUDFSetter implements PostProcessHandler {
     
     UserManager usrMgr;
     RoleManager roleMgr;
+    OrganizationManager orgMgr;
     
     // if REQUEST context -> login and get all manager classes
     if ("<anonymous>".equalsIgnoreCase(ContextManager.getOrigUser())) {
@@ -102,6 +105,7 @@ public class RoleUserUDFSetter implements PostProcessHandler {
     
       usrMgr = oimClient.getService(UserManager.class);    
       roleMgr = oimClient.getService(RoleManager.class);
+      orgMgr = oimClient.getService(OrganizationManager.class);
     } else {
       usrMgr = 
         Platform.getServiceForEventHandlers(UserManager.class 
@@ -115,6 +119,11 @@ public class RoleUserUDFSetter implements PostProcessHandler {
                                           , ContextManager.getContextType().toString()
                                           , ContextManager.getContextSubType()
                                           , ContextManager.getAllValuesFromCurrentContext());
+         orgMgr = Platform.getServiceForEventHandlers(OrganizationManager.class
+                                        , ContextManager.getContextKey()
+                                        , ContextManager.getContextType().toString()
+                                        , ContextManager.getContextSubType()
+                                        , ContextManager.getAllValuesFromCurrentContext());
     }
     
     // get user's current GrpIDs and GrpName to modify them
@@ -125,8 +134,10 @@ public class RoleUserUDFSetter implements PostProcessHandler {
       setAttr.clear();
       setAttr.add("AWSMgtGrpName");
       setAttr.add("AWSMgmtGrpIDs");
-      
+      setAttr.add(UserManagerConstants.AttributeName.USER_ORGANIZATION.getId());
+
       User usr;
+      String orgName = null;  
       try {
         usr = usrMgr.getDetails(strUserKey, setAttr, false);
       } catch (Exception e) {
@@ -135,6 +146,19 @@ public class RoleUserUDFSetter implements PostProcessHandler {
         return new EventResult();
       }
 
+    String orgKey = usr.getAttribute(UserManagerConstants.AttributeName.USER_ORGANIZATION.getId()).toString();
+    logger.finest("orgKey == " + orgKey);
+        try {
+            Organization organization= orgMgr.getDetails(orgKey, null, false);
+            orgName = organization.getAttribute(OrganizationManagerConstants.AttributeName.ORG_NAME.getId()).toString();
+            logger.finest("orgName == " + orgName);     
+            
+        } catch (OrganizationManagerException e) {
+            logger.log(Level.SEVERE, "Exception :", e);
+        }
+       
+    if(!orgName.equalsIgnoreCase("AWS Internal")){
+            logger.finest("orgName is not  AWS Internal");  
       // add new GrpID and GrpName to existing values
       // if they are set otherwise nulls
       String strGrpName = null, strGrpIDs = null;
@@ -216,8 +240,10 @@ public class RoleUserUDFSetter implements PostProcessHandler {
         logger.log(Level.SEVERE, "Can't set new user attributes", e);
         return new EventResult();
       }
+    }else{
+        logger.finest("orgName is AWS Internal. So skipping UDF updation.");  
     }
-    
+    }
     logger.exiting(TAG, "execute");
     return new EventResult();
   }
