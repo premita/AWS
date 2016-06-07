@@ -18,11 +18,13 @@ import java.util.regex.Pattern;
 
 import oracle.iam.identity.exception.OrganizationManagerException;
 import oracle.iam.identity.orgmgmt.api.OrganizationManager;
+import oracle.iam.identity.orgmgmt.api.OrganizationManagerConstants;
 import oracle.iam.identity.orgmgmt.vo.Organization;
 import oracle.iam.identity.rolemgmt.api.RoleManager;
 import oracle.iam.identity.rolemgmt.api.RoleManagerConstants;
 import oracle.iam.identity.rolemgmt.vo.Role;
 import oracle.iam.identity.usermgmt.api.UserManager;
+import oracle.iam.identity.usermgmt.api.UserManagerConstants;
 import oracle.iam.identity.usermgmt.vo.User;
 import oracle.iam.platform.Platform;
 import oracle.iam.platform.authopss.api.AdminRoleService;
@@ -62,6 +64,7 @@ public class RoleUserUDFRemover implements PostProcessHandler {
     logger.finest("User Keys: " + lstUsrKeys.toString());
 
     RoleManager roleMgr = Platform.getService(RoleManager.class);
+    OrganizationManager orgMgr = Platform.getService(OrganizationManager.class);
     UserManager usrMgr = 
       Platform.getServiceForEventHandlers(UserManager.class,
                                           ContextManager.getContextKey(),
@@ -76,7 +79,9 @@ public class RoleUserUDFRemover implements PostProcessHandler {
       setAttr.clear();
       setAttr.add("AWSMgtGrpName");
       setAttr.add("AWSMgmtGrpIDs");
-      
+      setAttr.add(UserManagerConstants.AttributeName.USER_ORGANIZATION.getId());
+        
+      String orgName = null;  
       User usr;
       try {
         usr = usrMgr.getDetails(strUserKey, setAttr, false);
@@ -86,11 +91,25 @@ public class RoleUserUDFRemover implements PostProcessHandler {
         logger.warning("Skipping user with key: " + strUserKey);
         continue;
       }
+      String orgKey = usr.getAttribute(UserManagerConstants.AttributeName.USER_ORGANIZATION.getId()).toString();
+        logger.finest("orgKey == " + orgKey); 
 
-      String strGrpName = null, strGrpIDs = null;
+        try {
+            Organization organization= orgMgr.getDetails(orgKey, null, false);
+            orgName = organization.getAttribute(OrganizationManagerConstants.AttributeName.ORG_NAME.getId()).toString();
+            logger.finest("orgName == " + orgName);     
+            
+        } catch (OrganizationManagerException e) {
+            logger.log(Level.SEVERE, "Exception :", e);
+        }
+        
+    if(!orgName.equalsIgnoreCase("AWS Internal")){
+        logger.finest("orgName is not  AWS Internal");  
+ 
+    String strGrpName = null, strGrpIDs = null;
 
-      Set<String> setGrpNames = new HashSet<>();
-      Set<String> setGrpIDs = new HashSet<>();
+      Set<String> setGrpNames = new HashSet<String>();
+      Set<String> setGrpIDs = new HashSet<String>();
       
       if (usr.getAttribute("AWSMgtGrpName") != null) {
         //split the string into an array of GrpNames
@@ -99,14 +118,16 @@ public class RoleUserUDFRemover implements PostProcessHandler {
                                       .getAttribute("AWSMgtGrpName")
                                       .toString()
                                       .split("[,:]")));
+          logger.finest("setGrpNames == " + setGrpNames);     
       }
 
       if (usr.getAttribute("AWSMgmtGrpIDs") != null) {
         //split the string into an array of GrpIDs
         setGrpIDs = 
-          new HashSet<>(Arrays.asList(usr
+          new HashSet<String>(Arrays.asList(usr
                                       .getAttribute("AWSMgmtGrpIDs")
                                       .toString().split("[,:]")));
+          logger.finest("setGrpIDs == " + setGrpIDs);
       }
       
       // get role name which is equal to org name and org desc
@@ -155,14 +176,18 @@ public class RoleUserUDFRemover implements PostProcessHandler {
 
           continue;
         }
-        
+        logger.finest("setGrpNames before removing group names == " + setGrpNames.toString());
+        logger.finest("setGrpIDs before removing group ids== " + setGrpIDs.toString());    
         setGrpNames.remove(strRoleName);
         setGrpIDs.remove(strRoleDesc);
+        logger.finest("setGrpNames after removing group names == " + setGrpNames.toString());
+        logger.finest("setGrpIDs after removing group ids== " + setGrpIDs.toString());
       }
       
       if (setGrpNames.size() > 0) {
         strGrpName = 
           setGrpNames.toString().replace(", ", ",").replaceAll("[\\[\\]]", "");
+          logger.finest("strGrpName to be set in UDF== " + strGrpName);  
       } else {
         logger.warning("New GrpName is empty");
         strGrpName = null;          
@@ -171,6 +196,7 @@ public class RoleUserUDFRemover implements PostProcessHandler {
       if (setGrpIDs.size() > 0) {
         strGrpIDs = 
           setGrpIDs.toString().replace(", ", ",").replaceAll("[\\[\\]]", "");
+          logger.finest("strGrpIDs to be set in UDF== " + strGrpIDs); 
       } else {
         logger.warning("New GrpID is empty");
         strGrpIDs = null;
@@ -190,8 +216,10 @@ public class RoleUserUDFRemover implements PostProcessHandler {
         logger.warning("Skipping user with key: " + strUserKey);
         continue;
       }
+    }else{
+        logger.finest("orgName is AWS Internal. So skipping UDF updation.");  
     }
-    
+    }
     logger.exiting(TAG, "execute");
     return new EventResult();
   }
