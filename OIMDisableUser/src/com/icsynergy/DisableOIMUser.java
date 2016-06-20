@@ -43,7 +43,8 @@ public class DisableOIMUser extends TaskSupport {
         SearchCriteria OrgSearchCriteria = new SearchCriteria("Organization Name", OrgName, SearchCriteria.Operator.EQUAL);
         
         // searching for active users
-        SearchCriteria critActive = new SearchCriteria(UserManagerConstants.AttributeName.STATUS.getName(), "ACTIVE", SearchCriteria.Operator.EQUAL);
+        SearchCriteria critActive = new SearchCriteria(UserManagerConstants.AttributeName.STATUS.getName(), 
+                                    UserManagerConstants.AttributeValues.USER_STATUS_ACTIVE.getId(), SearchCriteria.Operator.EQUAL);
         
         // final criteria criteria
         SearchCriteria criteria = new SearchCriteria( OrgSearchCriteria, critActive, SearchCriteria.Operator.AND);
@@ -84,16 +85,15 @@ public class DisableOIMUser extends TaskSupport {
         if(!bulkDisableSucceed.isEmpty()){
             m_logger.finest("Succeeded");
             for(Object o : bulkDisableSucceed)
-                m_logger.finest("User Key for the Disabled User: " + o.toString());
+                m_logger.finest("User Key for the Disabled User : [" + o.toString()+"]");
         }
         
         if(!bulkDisableFailed.entrySet().isEmpty()){
             m_logger.finest("Failed");
             for(Map.Entry<String, String> entry : bulkDisableFailed.entrySet())
-                m_logger.finest("User Key for not Disabled User "+entry.getKey()+" Reason of Failure : "+entry.getValue());
+                m_logger.finest("User Key for not Disabled User : ["+entry.getKey()+"] Reason of Failure : ["+entry.getValue()+"]");
         }          
         
-        m_logger.finest("Status: "+bulkDisableStatus);
         m_logger.exiting( TAG, "execute" );
     }
 
