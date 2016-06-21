@@ -16,11 +16,11 @@ import oracle.iam.platform.Platform;
 import oracle.iam.platform.entitymgr.vo.SearchCriteria;
 import oracle.iam.scheduler.vo.TaskSupport;
 
-public class DisableOIMUser extends TaskSupport {
+public class DisableUsersInOrgTask extends TaskSupport {
     private static final String TAG = "DisableOIMUser";
     private static final Logger m_logger = Logger.getLogger("com.icsynergy");
     
-    public DisableOIMUser() {
+    public DisableUsersInOrgTask() {
         super();
     }
 
@@ -91,7 +91,7 @@ public class DisableOIMUser extends TaskSupport {
         if(!bulkDisableFailed.entrySet().isEmpty()){
             m_logger.finest("Failed");
             for(Map.Entry<String, String> entry : bulkDisableFailed.entrySet())
-                m_logger.finest("User Key for not Disabled User : ["+entry.getKey()+"] Reason of Failure : ["+entry.getValue()+"]");
+                m_logger.finest("User Key for not Disabled User : ["+entry.getKey()+"] Reason of Failure : "+entry.getValue()+"]");
         }          
         
         m_logger.exiting( TAG, "execute" );

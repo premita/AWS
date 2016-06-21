@@ -1,7 +1,7 @@
 <scheduledTasks xmlns="http://xmlns.oracle.com/oim/scheduler">
     <task>
-        <name>Disable OIM User</name>
-        <class>com.icsynergy.DisableOIMUser</class>
+        <name>Disable OIM User in Organization</name>
+        <class>com.icsynergy.DisableUsersInOrgTask</class>
         <description>Disable user from given organization</description>
         <retry>0</retry>
         <parameters>

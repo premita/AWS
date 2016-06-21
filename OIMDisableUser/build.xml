@@ -9,9 +9,9 @@
   <property name="build" location="build"/>
   <property name="dist" location="dist"/>
   <property name="temp" location="temp"/>
-  <property name="PluginName" value="DisableOIMUser"/>
+  <property name="PluginName" value="DisableUsersInOrgTask"/>
   <property name="PluginClassToUnregister"
-            value="com.icsynergy.DisableOIMUser"/>
+            value="com.icsynergy.DisableUsersInOrgTask"/>
   <property name="OIM.Username" value="xelsysadm"/>
   <property name="ServerURL" value="t3://iam-aus-e003.corp.wayport.net:14000"/>
   <property name="WL.ServerName" value="oim_server1"/>
@@ -60,7 +60,7 @@
     <jar destfile="${dist}/lib/${PluginName}.jar" basedir="${build}"/>
     <copy file="config/plugin.xml" todir="${dist}"/>
     <mkdir dir="${dist}/META-INF"/>
-    <copy file="config/DisableOIMUser.xml" todir="${dist}/META-INF"/>
+    <copy file="config/DisableUsersInOrgTask.xml" todir="${dist}/META-INF"/>
     <zip destfile="${PluginName}.zip" basedir="${dist}"/>
   </target>
   <target name="register" depends="dist">
