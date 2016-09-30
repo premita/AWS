@@ -1,0 +1,12 @@
+<scheduledTasks xmlns="http://xmlns.oracle.com/oim/scheduler">
+    <task>
+        <name>Assign Manager In OIM From PhoneBook</name>
+        <class>com.icsynergy.AssignManagerInOIMFromPhoneBook</class>
+        <description>Assign Manager In OIM From PhoneBook</description>
+        <retry>0</retry>
+        <parameters>
+            <string-param required="true" helpText="Search Users From Organization">Search Users From Organization</string-param>
+			<string-param required="true" helpText="Create User In Organization">Create User In Organization</string-param>
+        </parameters>
+    </task>
+</scheduledTasks>
